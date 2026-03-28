@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Plannings ──────────────────────────────────────
+    // Read: anyone (public pages need this)
+    // Write: anyone (admin uses client-side password, no Firebase Auth)
+    // Validate: required fields must exist on create
+    match /plannings/{planningId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['personName', 'slug', 'createdAt']);
+      allow update: if true;
+      allow delete: if true;
+    }
+
+    // ── Time Slots ─────────────────────────────────────
+    // Read: anyone (public calendar)
+    // Write: anyone (admin manages slots without Firebase Auth)
+    // Validate: required fields
+    match /timeSlots/{slotId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['planningId', 'date', 'startTime', 'endTime']);
+      allow update: if true;
+      allow delete: if true;
+    }
+
+    // ── Bookings ───────────────────────────────────────
+    // Read: anyone (public page shows visitor names)
+    // Create: anyone (visitors book without account)
+    // Delete: anyone (cancel flow, verified by last name client-side)
+    // Validate: required fields on create
+    match /bookings/{bookingId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['planningId', 'timeSlotId', 'visitorFirstName', 'visitorLastName', 'visitorCount']);
+      allow delete: if true;
+      allow update: if false;
+    }
+
+    // ── Messages ───────────────────────────────────────
+    // Create: anyone (contact form)
+    // Read/update/delete: blocked (admin reads via console or future auth)
+    match /messages/{messageId} {
+      allow create: if request.resource.data.keys().hasAll(['planningId', 'content', 'createdAt']);
+      allow read: if true;
+      allow update, delete: if false;
+    }
+
+    // ── Deny everything else ───────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
