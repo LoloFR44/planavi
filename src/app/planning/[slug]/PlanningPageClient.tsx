@@ -111,7 +111,7 @@ export default function PlanningPageClient({ slug }: { slug: string }) {
         </div>
 
         {/* Calendar */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
           {isLoading ? (
             <LoadingSpinner />
           ) : (
