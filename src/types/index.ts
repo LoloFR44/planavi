@@ -16,6 +16,7 @@ export interface Planning {
   endDate?: string;
   isActive: boolean;
   adminPassword: string;
+  adminName?: string;
   adminEmail?: string;
   createdAt: number;
   updatedAt: number;

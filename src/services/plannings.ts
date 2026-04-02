@@ -23,11 +23,13 @@ export async function createPlanning(data: PlanningFormData): Promise<string> {
   if (existing) throw new Error('Ce slug est déjà utilisé');
 
   const now = Date.now();
-  const docRef = await addDoc(collection(db, COLLECTION), stripUndefined({
+  const normalizedData = {
     ...data,
+    adminEmail: data.adminEmail?.toLowerCase(),
     createdAt: now,
     updatedAt: now,
-  }));
+  };
+  const docRef = await addDoc(collection(db, COLLECTION), stripUndefined(normalizedData));
   return docRef.id;
 }
 
@@ -43,6 +45,12 @@ export async function getPlanningBySlug(slug: string): Promise<Planning | null> 
   if (snap.empty) return null;
   const d = snap.docs[0];
   return { id: d.id, ...d.data() } as Planning;
+}
+
+export async function getPlanningsByEmail(email: string): Promise<Planning[]> {
+  const q = query(collection(db, COLLECTION), where('adminEmail', '==', email.toLowerCase()));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Planning);
 }
 
 export async function getAllPlannings(): Promise<Planning[]> {

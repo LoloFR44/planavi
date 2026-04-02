@@ -44,6 +44,7 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
     endDate: initial?.endDate || '',
     isActive: initial?.isActive ?? true,
     adminPassword: initial?.adminPassword || '',
+    adminName: initial?.adminName || '',
     adminEmail: initial?.adminEmail || '',
   });
   const [loading, setLoading] = useState(false);
@@ -120,8 +121,8 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.residentName.trim() || !form.title.trim() || !form.slug.trim() || !form.adminPassword.trim()) {
-      setError('Les champs nom, titre, slug et mot de passe admin sont requis.');
+    if (!form.residentName.trim() || !form.title.trim() || !form.slug.trim() || !form.adminPassword.trim() || !form.adminEmail?.trim()) {
+      setError('Les champs nom, titre, slug, email et mot de passe sont requis.');
       return;
     }
     setLoading(true);
@@ -235,9 +236,14 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
             <input type="password" value={form.adminPassword} onChange={(e) => updateField('adminPassword', e.target.value)} className={inputClass} placeholder="Mot de passe pour gérer ce planning" required />
           </div>
           <div>
-            <label className={labelClass}>Email admin (notifications)</label>
-            <input type="email" value={form.adminEmail} onChange={(e) => updateField('adminEmail', e.target.value)} className={inputClass} placeholder="admin@email.fr" />
-            <p className="text-xs text-gray-400 mt-1">Recevez un email à chaque nouvelle réservation</p>
+            <label className={labelClass}>Votre nom (organisateur)</label>
+            <input type="text" value={form.adminName} onChange={(e) => updateField('adminName', e.target.value)} className={inputClass} placeholder="ex : Loic" />
+            <p className="text-xs text-gray-400 mt-1">Affiché sur la page publique comme organisateur</p>
+          </div>
+          <div>
+            <label className={labelClass}>Votre email *</label>
+            <input type="email" value={form.adminEmail} onChange={(e) => updateField('adminEmail', e.target.value)} className={inputClass} placeholder="votre@email.fr" required />
+            <p className="text-xs text-gray-400 mt-1">Sert d'identifiant pour vous reconnecter et recevoir les notifications</p>
           </div>
           <div>
             <label className={labelClass}>Durée par défaut (min)</label>
