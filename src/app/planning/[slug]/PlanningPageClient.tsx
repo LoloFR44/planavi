@@ -97,14 +97,14 @@ export default function PlanningPageClient({ slug }: { slug: string }) {
             {/* Admin message */}
             {planning.adminMessage && (
               <div className="mt-3 bg-[#1e3a8a]/5 border border-[#1e3a8a]/10 rounded-lg px-3 py-2">
-                <p className="text-sm font-medium text-[#1e3a8a]">📢 {planning.adminMessage}</p>
+                <p className="text-sm font-medium text-[#1e3a8a] whitespace-pre-line">📢 {planning.adminMessage}</p>
               </div>
             )}
 
             {/* Public notes */}
             {planning.publicNotes && (
               <div className="mt-2 bg-gray-50 rounded-lg px-3 py-2">
-                <p className="text-sm text-gray-600">{planning.publicNotes}</p>
+                <p className="text-sm text-gray-600 whitespace-pre-line">{planning.publicNotes}</p>
               </div>
             )}
           </div>

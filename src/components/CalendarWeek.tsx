@@ -152,7 +152,7 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
           return (
             <div
               key={key}
-              className={`rounded-xl border p-3 ${
+              className={`rounded-lg border p-2 ${
                 isPast
                   ? 'hidden lg:block border-gray-100 bg-gray-50/30 opacity-40'
                   : isToday
@@ -162,20 +162,20 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
                       : 'border-gray-100 bg-gray-50/50'
               }`}
             >
-              <div className="text-center mb-2">
-                <p className={`text-xs font-bold uppercase tracking-wider ${
+              <div className="text-center mb-1.5">
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${
                   isToday ? 'text-[#1e3a8a]' : isPast ? 'text-gray-300' : 'text-gray-400'
                 }`}>{DAY_NAMES[i]}</p>
-                <p className={`text-xl font-bold ${
+                <p className={`text-sm font-bold ${
                   isToday ? 'text-[#1e3a8a]' : isPast ? 'text-gray-300' : 'text-gray-800'
                 }`}>
                   {day.getDate()}
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {isPast ? (
-                  <p className="text-xs text-gray-300 text-center py-2">Passé</p>
+                  <p className="text-[10px] text-gray-300 text-center py-1">Passé</p>
                 ) : daySlots.length > 0 ? (
                   daySlots.map((slot) => (
                     <TimeSlotCard
@@ -186,7 +186,7 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
                     />
                   ))
                 ) : (
-                  <p className="text-xs text-gray-300 text-center py-3">Pas de créneau</p>
+                  <p className="text-[10px] text-gray-300 text-center py-1.5">Pas de créneau</p>
                 )}
               </div>
             </div>

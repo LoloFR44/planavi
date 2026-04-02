@@ -5,7 +5,6 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
@@ -33,10 +32,19 @@ export function subscribeToMessages(
 ): Unsubscribe {
   const q = query(
     collection(db, COLLECTION),
-    where('planningId', '==', planningId),
-    orderBy('createdAt', 'asc')
+    where('planningId', '==', planningId)
   );
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Message));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const msgs = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }) as Message)
+        .sort((a, b) => a.createdAt - b.createdAt);
+      callback(msgs);
+    },
+    (error) => {
+      console.error('Firestore subscription error (messages):', error);
+      callback([]);
+    }
+  );
 }
