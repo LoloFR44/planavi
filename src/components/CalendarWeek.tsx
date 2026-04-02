@@ -148,7 +148,15 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
           const isToday = key === today;
           const isPast = key < today;
 
-          // Skip past days entirely on mobile, show grayed on desktop
+          // Only show up to 2 past days, hide older ones
+          if (isPast) {
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
+            const diffMs = todayDate.getTime() - day.getTime();
+            const diffDays = Math.round(diffMs / 86400000);
+            if (diffDays > 2) return null;
+          }
+
           return (
             <div
               key={key}

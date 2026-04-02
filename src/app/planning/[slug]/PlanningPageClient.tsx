@@ -66,12 +66,12 @@ export default function PlanningPageClient({ slug }: { slug: string }) {
               <span className="text-3xl mt-0.5">{icon}</span>
               <div className="flex-1 min-w-0">
                 <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                  {planning.residentName}
-                  {planning.residentFirstName && (
-                    <span className="text-gray-400 font-normal text-lg"> ({planning.residentFirstName})</span>
-                  )}
+                  {planning.title}
                 </h1>
-                <p className="text-sm text-gray-500 mt-0.5">{planning.title}</p>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Organisé par {planning.residentName}
+                  {planning.residentFirstName && ` ${planning.residentFirstName}`}
+                </p>
 
                 <div className="flex flex-wrap items-center gap-2 mt-1.5 text-sm text-gray-500">
                   <span className="px-2 py-0.5 bg-[#1e3a8a]/5 text-[#1e3a8a] rounded-full text-xs font-semibold">
