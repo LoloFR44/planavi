@@ -121,8 +121,8 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.residentName.trim() || !form.title.trim() || !form.slug.trim() || !form.adminPassword.trim() || !form.adminEmail?.trim()) {
-      setError('Les champs nom, titre, slug, email et mot de passe sont requis.');
+    if (!form.residentName.trim() || !form.title.trim() || !form.slug.trim() || !form.adminPassword.trim() || !form.adminEmail?.trim() || !form.adminName?.trim()) {
+      setError('Merci de remplir tous les champs marqués d\'une étoile *.');
       return;
     }
     setLoading(true);
@@ -148,27 +148,29 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Personne visitée */}
+      {/* Qui organisez-vous les visites ? */}
       <fieldset className="bg-white rounded-xl border border-gray-100 p-5">
-        <legend className="text-sm font-semibold text-gray-900 px-2">Personne visitée</legend>
-        <div className="grid sm:grid-cols-2 gap-4 mt-3">
+        <legend className="text-sm font-semibold text-gray-900 px-2">Qui allez-vous visiter ?</legend>
+        <p className="text-xs text-gray-400 mt-1 mb-3">Indiquez les informations de la personne que vos proches viendront voir.</p>
+        <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Nom affiché *</label>
-            <input type="text" value={form.residentName} onChange={(e) => updateField('residentName', e.target.value)} className={inputClass} placeholder="Dupont" required />
+            <label className={labelClass}>Nom de famille *</label>
+            <input type="text" value={form.residentName} onChange={(e) => updateField('residentName', e.target.value)} className={inputClass} placeholder="ex : Dupont" required />
           </div>
           <div>
             <label className={labelClass}>Prénom</label>
-            <input type="text" value={form.residentFirstName} onChange={(e) => updateField('residentFirstName', e.target.value)} className={inputClass} placeholder="Marie" />
+            <input type="text" value={form.residentFirstName} onChange={(e) => updateField('residentFirstName', e.target.value)} className={inputClass} placeholder="ex : Marie" />
           </div>
           <div>
-            <label className={labelClass}>Type de lieu</label>
+            <label className={labelClass}>Où se trouvent-ils ?</label>
             <select value={form.residentType} onChange={(e) => updateField('residentType', e.target.value)} className={inputClass}>
               {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div>
-            <label className={labelClass}>Nom du lieu</label>
-            <input type="text" value={form.locationName} onChange={(e) => updateField('locationName', e.target.value)} className={inputClass} placeholder="EHPAD Les Oliviers" />
+            <label className={labelClass}>Nom de l&apos;établissement</label>
+            <input type="text" value={form.locationName} onChange={(e) => updateField('locationName', e.target.value)} className={inputClass} placeholder="ex : EHPAD Les Oliviers, Hôpital Dupuytren..." />
+            <p className="text-xs text-gray-400 mt-1">Laissez vide si c&apos;est à domicile</p>
           </div>
           <div className="sm:col-span-2 relative">
             <label className={labelClass}>Adresse</label>
@@ -179,7 +181,7 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
                 updateField('address', e.target.value);
               }}
               className={inputClass}
-              placeholder="12 rue des Lilas, 75020 Paris"
+              placeholder="ex : 12 rue des Lilas, 75020 Paris"
               autoComplete="off"
               onFocus={() => {
                 if (suggestions.length > 0) setShowSuggestions(true);
@@ -188,6 +190,7 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
                 setTimeout(() => setShowSuggestions(false), 150);
               }}
             />
+            <p className="text-xs text-gray-400 mt-1">Commencez à taper, des suggestions apparaîtront</p>
             {isAddressLoading && (
               <div className="absolute right-2 top-10 text-xs text-gray-500">Recherche...</div>
             )}
@@ -210,44 +213,57 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
             )}
           </div>
           <div>
-            <label className={labelClass}>Chambre / étage / indications</label>
-            <input type="text" value={form.room} onChange={(e) => updateField('room', e.target.value)} className={inputClass} placeholder="Chambre 204, 2ème étage" />
+            <label className={labelClass}>Chambre / étage / code</label>
+            <input type="text" value={form.room} onChange={(e) => updateField('room', e.target.value)} className={inputClass} placeholder="ex : Chambre 204, 2ème étage, code 1234A" />
+          </div>
+        </div>
+      </fieldset>
+
+      {/* Vos informations */}
+      <fieldset className="bg-white rounded-xl border border-gray-100 p-5">
+        <legend className="text-sm font-semibold text-gray-900 px-2">Vos informations (organisateur)</legend>
+        <p className="text-xs text-gray-400 mt-1 mb-3">Ces informations servent à vous identifier et à vous reconnecter.</p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Votre prénom *</label>
+            <input type="text" value={form.adminName} onChange={(e) => updateField('adminName', e.target.value)} className={inputClass} placeholder="ex : Loic" required />
+            <p className="text-xs text-gray-400 mt-1">Sera affiché sur la page comme &quot;Organisé par...&quot;</p>
+          </div>
+          <div>
+            <label className={labelClass}>Votre email *</label>
+            <input type="email" value={form.adminEmail} onChange={(e) => updateField('adminEmail', e.target.value)} className={inputClass} placeholder="ex : loic@gmail.com" required />
+            <p className="text-xs text-gray-400 mt-1">Pour vous reconnecter et recevoir les notifications</p>
+          </div>
+          <div>
+            <label className={labelClass}>Choisissez un mot de passe *</label>
+            <input type="text" value={form.adminPassword} onChange={(e) => updateField('adminPassword', e.target.value)} className={inputClass} placeholder="ex : mamandupont2026" required />
+            <p className="text-xs text-gray-400 mt-1">Choisissez quelque chose de facile à retenir</p>
           </div>
         </div>
       </fieldset>
 
       {/* Configuration du planning */}
       <fieldset className="bg-white rounded-xl border border-gray-100 p-5">
-        <legend className="text-sm font-semibold text-gray-900 px-2">Configuration</legend>
-        <div className="grid sm:grid-cols-2 gap-4 mt-3">
+        <legend className="text-sm font-semibold text-gray-900 px-2">Votre planning</legend>
+        <p className="text-xs text-gray-400 mt-1 mb-3">Donnez un titre à votre planning et configurez les dates.</p>
+        <div className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className={labelClass}>Titre du planning *</label>
-            <input type="text" value={form.title} onChange={(e) => updateField('title', e.target.value)} className={inputClass} placeholder="Visites pour Marie Dupont" required />
+            <input type="text" value={form.title} onChange={(e) => updateField('title', e.target.value)} className={inputClass} placeholder="ex : Visites pour Marie Dupont" required />
+            <p className="text-xs text-gray-400 mt-1">C&apos;est le titre principal affiché en haut de la page</p>
           </div>
           <div>
-            <label className={labelClass}>Slug (URL) *</label>
+            <label className={labelClass}>Adresse courte du planning (URL)</label>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">/planning/</span>
+              <span className="text-xs text-gray-400 shrink-0">planning-visites.fr/planning/</span>
               <input type="text" value={form.slug} onChange={(e) => updateField('slug', slugify(e.target.value))} className={inputClass} required />
             </div>
+            <p className="text-xs text-gray-400 mt-1">Se remplit automatiquement à partir du nom de famille</p>
           </div>
           <div>
-            <label className={labelClass}>Mot de passe admin *</label>
-            <input type="password" value={form.adminPassword} onChange={(e) => updateField('adminPassword', e.target.value)} className={inputClass} placeholder="Mot de passe pour gérer ce planning" required />
-          </div>
-          <div>
-            <label className={labelClass}>Votre nom (organisateur)</label>
-            <input type="text" value={form.adminName} onChange={(e) => updateField('adminName', e.target.value)} className={inputClass} placeholder="ex : Loic" />
-            <p className="text-xs text-gray-400 mt-1">Affiché sur la page publique comme organisateur</p>
-          </div>
-          <div>
-            <label className={labelClass}>Votre email *</label>
-            <input type="email" value={form.adminEmail} onChange={(e) => updateField('adminEmail', e.target.value)} className={inputClass} placeholder="votre@email.fr" required />
-            <p className="text-xs text-gray-400 mt-1">Sert d'identifiant pour vous reconnecter et recevoir les notifications</p>
-          </div>
-          <div>
-            <label className={labelClass}>Durée par défaut (min)</label>
+            <label className={labelClass}>Durée d&apos;une visite</label>
             <input type="number" min={15} step={15} value={form.defaultVisitDuration} onChange={(e) => updateField('defaultVisitDuration', parseInt(e.target.value) || 60)} className={inputClass} />
+            <p className="text-xs text-gray-400 mt-1">En minutes (ex : 60 = 1 heure)</p>
           </div>
           <div>
             <label className={labelClass}>Date de début</label>
@@ -256,25 +272,28 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
           <div>
             <label className={labelClass}>Date de fin (optionnel)</label>
             <input type="date" value={form.endDate} onChange={(e) => updateField('endDate', e.target.value)} className={inputClass} />
+            <p className="text-xs text-gray-400 mt-1">Laissez vide si vous ne savez pas encore</p>
           </div>
         </div>
       </fieldset>
 
       {/* Notes */}
       <fieldset className="bg-white rounded-xl border border-gray-100 p-5">
-        <legend className="text-sm font-semibold text-gray-900 px-2">Notes et messages</legend>
-        <div className="space-y-4 mt-3">
+        <legend className="text-sm font-semibold text-gray-900 px-2">Informations pour les visiteurs</legend>
+        <p className="text-xs text-gray-400 mt-1 mb-3">Ces messages seront visibles par les personnes qui consultent le planning.</p>
+        <div className="space-y-4">
           <div>
-            <label className={labelClass}>Message public (affiché aux visiteurs)</label>
-            <textarea value={form.adminMessage} onChange={(e) => updateField('adminMessage', e.target.value)} className={inputClass} rows={2} placeholder="Message visible sur la page publique..." />
+            <label className={labelClass}>Message important (affiché en évidence)</label>
+            <textarea value={form.adminMessage} onChange={(e) => updateField('adminMessage', e.target.value)} className={inputClass} rows={3} placeholder={"ex : Code d'entrée 1234A\nKiné les lundis 13h-14h30\nNe pas venir entre 12h et 13h (repas)"} />
+            <p className="text-xs text-gray-400 mt-1">Vous pouvez faire des retours à la ligne avec la touche Entrée</p>
           </div>
           <div>
-            <label className={labelClass}>Notes publiques</label>
-            <textarea value={form.publicNotes} onChange={(e) => updateField('publicNotes', e.target.value)} className={inputClass} rows={2} placeholder="Informations pratiques pour les visiteurs..." />
+            <label className={labelClass}>Informations complémentaires</label>
+            <textarea value={form.publicNotes} onChange={(e) => updateField('publicNotes', e.target.value)} className={inputClass} rows={2} placeholder="ex : Parking gratuit devant la maison, sonner 2 fois..." />
           </div>
           <div>
-            <label className={labelClass}>Notes privées (admin uniquement)</label>
-            <textarea value={form.privateNotes} onChange={(e) => updateField('privateNotes', e.target.value)} className={inputClass} rows={2} placeholder="Notes internes..." />
+            <label className={labelClass}>Notes privées (visibles uniquement par vous)</label>
+            <textarea value={form.privateNotes} onChange={(e) => updateField('privateNotes', e.target.value)} className={inputClass} rows={2} placeholder="ex : Rappeler le médecin lundi, clé chez la voisine..." />
           </div>
         </div>
       </fieldset>

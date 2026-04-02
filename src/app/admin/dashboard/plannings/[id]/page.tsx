@@ -134,48 +134,57 @@ export default function ManagePlanningPage({
         </div>
       </div>
 
-      {/* Share link + QR code */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-medium text-gray-700">Lien public de partage</p>
-          {shareUrl && <QRCodeShare url={shareUrl} title={`Partager le planning de ${planning.residentName}`} />}
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            readOnly
-            value={shareUrl}
-            className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600"
-          />
-          <button
-            onClick={copyShareUrl}
-            className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
-            style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
-          >
-            Copier
-          </button>
+      {/* Share link - big prominent button */}
+      <div className="bg-[#1e3a8a]/5 rounded-xl border-2 border-[#1e3a8a]/20 p-5 mb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="text-base font-bold text-[#1e3a8a] mb-1">Partagez ce lien à vos proches</h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Envoyez ce lien par SMS, email ou WhatsApp à votre famille pour qu&apos;ils puissent réserver une visite.
+            </p>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                readOnly
+                value={shareUrl}
+                className="flex-1 px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 select-all"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+            </div>
+            <button
+              onClick={copyShareUrl}
+              className="w-full sm:w-auto px-6 py-3 text-white text-base font-semibold rounded-xl hover:shadow-md transition-all"
+              style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
+            >
+              📋 Copier le lien à partager
+            </button>
+          </div>
+          {shareUrl && (
+            <div className="hidden sm:block shrink-0">
+              <QRCodeShare url={shareUrl} title={`Partager le planning de ${planning.residentName}`} />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Admin message */}
       <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">
-        <p className="text-sm font-medium text-gray-700 mb-2">Message public (affiché aux visiteurs)</p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={adminMessage}
-            onChange={(e) => setAdminMessage(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-            placeholder="Message pour les visiteurs..."
-          />
-          <button
-            onClick={handleSaveMessage}
-            className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
-            style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
-          >
-            Enregistrer
-          </button>
-        </div>
+        <p className="text-sm font-bold text-gray-700 mb-1">Message pour les visiteurs</p>
+        <p className="text-xs text-gray-400 mb-2">Ce message sera affiché en haut de votre page de visites.</p>
+        <textarea
+          value={adminMessage}
+          onChange={(e) => setAdminMessage(e.target.value)}
+          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+          rows={3}
+          placeholder={"Ex : Merci de sonner au code 1234A\nKiné les lundis 13h-14h30\nNe pas venir entre 12h et 13h (repas)"}
+        />
+        <button
+          onClick={handleSaveMessage}
+          className="mt-2 px-5 py-2.5 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
+          style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
+        >
+          Enregistrer le message
+        </button>
       </div>
 
       {/* Tabs */}
