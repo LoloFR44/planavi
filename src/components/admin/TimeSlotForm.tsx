@@ -10,6 +10,16 @@ interface TimeSlotFormProps {
   onSuccess: () => void;
 }
 
+const DAYS_OF_WEEK = [
+  { key: 1, label: 'Lun', full: 'Lundi' },
+  { key: 2, label: 'Mar', full: 'Mardi' },
+  { key: 3, label: 'Mer', full: 'Mercredi' },
+  { key: 4, label: 'Jeu', full: 'Jeudi' },
+  { key: 5, label: 'Ven', full: 'Vendredi' },
+  { key: 6, label: 'Sam', full: 'Samedi' },
+  { key: 0, label: 'Dim', full: 'Dimanche' },
+];
+
 export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }: TimeSlotFormProps) {
   const [form, setForm] = useState({
     startDate: '',
@@ -20,9 +30,39 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     publicNote: '',
     splitSlots: false,
     slotDuration: defaultDuration,
+    selectedDays: [1, 2, 3, 4, 5, 6, 0] as number[], // tous les jours cochés par défaut
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const toggleDay = (dayKey: number) => {
+    setForm((prev) => {
+      const days = prev.selectedDays.includes(dayKey)
+        ? prev.selectedDays.filter((d) => d !== dayKey)
+        : [...prev.selectedDays, dayKey];
+      return { ...prev, selectedDays: days };
+    });
+  };
+
+  const selectWeekdays = () => {
+    setForm((prev) => ({ ...prev, selectedDays: [1, 2, 3, 4, 5] }));
+  };
+
+  const selectAllDays = () => {
+    setForm((prev) => ({ ...prev, selectedDays: [1, 2, 3, 4, 5, 6, 0] }));
+  };
+
+  // Compute how many matching days in the range
+  const countMatchingDays = (): number => {
+    if (!form.startDate) return 0;
+    const start = new Date(form.startDate + 'T00:00:00');
+    const end = form.endDate ? new Date(form.endDate + 'T00:00:00') : start;
+    let count = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (form.selectedDays.includes(d.getDay())) count++;
+    }
+    return count;
+  };
 
   // Compute preview of what will be created
   const computePreview = (): string => {
@@ -33,20 +73,18 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     const endMin = eH * 60 + eM;
     if (endMin <= startMin) return '';
 
-    const days = form.endDate && form.endDate !== form.startDate
-      ? Math.ceil((new Date(form.endDate + 'T00:00:00').getTime() - new Date(form.startDate + 'T00:00:00').getTime()) / 86400000) + 1
-      : 1;
-    const dayLabel = days > 1 ? ` x ${days} jours` : '';
+    const days = countMatchingDays();
+    if (days === 0) return 'Aucun jour ne correspond à votre sélection';
 
     if (!form.splitSlots) {
       const fmtStart = form.startTime.replace(':', 'h');
       const fmtEnd = form.endTime.replace(':', 'h');
-      return `${days} créneau${days > 1 ? 'x' : ''} de ${fmtStart} à ${fmtEnd}${dayLabel}`;
+      return `${days} créneau${days > 1 ? 'x' : ''} de ${fmtStart} à ${fmtEnd}`;
     } else {
       const count = Math.floor((endMin - startMin) / form.slotDuration);
       if (count <= 0) return 'Durée trop longue pour cette plage';
       const total = count * days;
-      return `${total} créneau${total > 1 ? 'x' : ''} de ${form.slotDuration} min${dayLabel}`;
+      return `${total} créneau${total > 1 ? 'x' : ''} de ${form.slotDuration} min sur ${days} jour${days > 1 ? 's' : ''}`;
     }
   };
 
@@ -54,6 +92,11 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     e.preventDefault();
     if (!form.startDate || !form.startTime || !form.endTime) {
       setError('La date, l\'heure de début et l\'heure de fin sont requises.');
+      return;
+    }
+
+    if (form.selectedDays.length === 0) {
+      setError('Sélectionnez au moins un jour de la semaine.');
       return;
     }
 
@@ -73,10 +116,12 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
       const end = form.endDate ? new Date(form.endDate + 'T00:00:00') : start;
 
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        // Ne créer que pour les jours cochés
+        if (!form.selectedDays.includes(d.getDay())) continue;
+
         const dateStr = d.toISOString().split('T')[0];
 
         if (form.splitSlots && form.slotDuration > 0) {
-          // Split into sub-slots
           const startMinutes = sH * 60 + sM;
           const endMinutes = eH * 60 + eM;
 
@@ -94,7 +139,6 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
             });
           }
         } else {
-          // One single slot per day
           slots.push({
             planningId,
             date: dateStr,
@@ -108,7 +152,7 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
       }
 
       if (slots.length === 0) {
-        setError('Aucun créneau à créer avec ces paramètres.');
+        setError('Aucun créneau à créer avec ces paramètres. Vérifiez les jours sélectionnés.');
         return;
       }
 
@@ -160,6 +204,41 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
         </div>
       </div>
 
+      {/* Jours de la semaine */}
+      <div className="bg-gray-50 rounded-lg p-3">
+        <div className="flex items-center justify-between mb-2">
+          <label className={labelClass}>Jours de la semaine</label>
+          <div className="flex gap-2">
+            <button type="button" onClick={selectWeekdays} className="text-xs text-[#1e3a8a] hover:underline font-medium">
+              Lun-Ven
+            </button>
+            <button type="button" onClick={selectAllDays} className="text-xs text-[#1e3a8a] hover:underline font-medium">
+              Tous
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mb-2">Cochez les jours où vous souhaitez créer des créneaux</p>
+        <div className="flex flex-wrap gap-2">
+          {DAYS_OF_WEEK.map((day) => {
+            const isSelected = form.selectedDays.includes(day.key);
+            return (
+              <button
+                key={day.key}
+                type="button"
+                onClick={() => toggleDay(day.key)}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  isSelected
+                    ? 'bg-[#1e3a8a] text-white shadow-sm'
+                    : 'bg-white text-gray-400 border border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {day.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Times */}
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
@@ -199,8 +278,9 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
           />
           <span className="text-sm font-medium text-gray-700">Découper en sous-créneaux</span>
         </label>
+        <p className="text-xs text-gray-400 mt-1 ml-6">Ex : un créneau 9h-12h découpé en 3 créneaux de 1h</p>
         {form.splitSlots && (
-          <div className="mt-2">
+          <div className="mt-2 ml-6">
             <label className={labelClass}>Durée de chaque sous-créneau</label>
             <select
               value={form.slotDuration}
@@ -229,9 +309,10 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
           />
           <span className="text-sm font-medium text-gray-700">Pas de limite de places</span>
         </label>
+        <p className="text-xs text-gray-400 mt-1 ml-6">Décochez pour limiter le nombre de visiteurs par créneau</p>
         {form.capacity > 0 && (
-          <div className="mt-2">
-            <label className={labelClass}>Nombre de places</label>
+          <div className="mt-2 ml-6">
+            <label className={labelClass}>Nombre de places par créneau</label>
             <input type="number" min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: Math.max(1, parseInt(e.target.value) || 1) })} className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent" />
           </div>
         )}
@@ -240,12 +321,12 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
       {/* Note */}
       <div>
         <label className={labelClass}>Note publique</label>
-        <textarea value={form.publicNote} onChange={(e) => setForm({ ...form, publicNote: e.target.value })} className={inputClass} rows={3} placeholder="Note visible par les visiteurs" />
+        <textarea value={form.publicNote} onChange={(e) => setForm({ ...form, publicNote: e.target.value })} className={inputClass} rows={2} placeholder="ex : Apporter un masque, sonner en arrivant..." />
       </div>
 
       {/* Preview */}
       {preview && (
-        <div className="bg-[#1e3a8a]/5 text-[#1e3a8a] text-sm px-3 py-2 rounded-lg font-medium">
+        <div className="bg-[#1e3a8a]/5 text-[#1e3a8a] text-sm px-3 py-2.5 rounded-lg font-medium">
           {preview}
         </div>
       )}
@@ -260,7 +341,7 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
         className="w-full py-2.5 text-white text-sm font-semibold rounded-lg hover:shadow-md transition-all disabled:opacity-50"
         style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
       >
-        {loading ? 'Création...' : 'Ajouter les créneaux'}
+        {loading ? 'Création en cours...' : 'Ajouter les créneaux'}
       </button>
     </form>
   );
