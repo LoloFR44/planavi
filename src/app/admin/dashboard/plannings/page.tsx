@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePlanningsByEmail } from '@/hooks/usePlanning';
+import { deletePlanning } from '@/services/plannings';
+import { deleteTimeSlotsForPlanning } from '@/services/timeSlots';
+import { deleteBookingsForPlanning } from '@/services/bookings';
 import ResidentCard from '@/components/ResidentCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import EmptyState from '@/components/ui/EmptyState';
@@ -22,6 +25,12 @@ export default function PlanningsListPage() {
   }, [router]);
 
   const { plannings, loading } = usePlanningsByEmail(email);
+
+  const handleDeletePlanning = async (id: string) => {
+    await deleteTimeSlotsForPlanning(id);
+    await deleteBookingsForPlanning(id);
+    await deletePlanning(id);
+  };
 
   if (!email) return <LoadingSpinner />;
 
@@ -72,7 +81,7 @@ export default function PlanningsListPage() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {plannings.map((p) => (
-            <ResidentCard key={p.id} planning={p} adminLink />
+            <ResidentCard key={p.id} planning={p} adminLink onDelete={handleDeletePlanning} />
           ))}
         </div>
       )}
