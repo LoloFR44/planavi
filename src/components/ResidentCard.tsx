@@ -15,9 +15,10 @@ interface ResidentCardProps {
   planning: Planning;
   adminLink?: boolean;
   onDelete?: (id: string) => void;
+  index?: number;
 }
 
-export default function ResidentCard({ planning, adminLink, onDelete }: ResidentCardProps) {
+export default function ResidentCard({ planning, adminLink, onDelete, index }: ResidentCardProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -42,6 +43,9 @@ export default function ResidentCard({ planning, adminLink, onDelete }: Resident
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 p-5">
           <div className="flex items-start justify-between mb-3">
             <div>
+              {index !== undefined && (
+                <p className="text-xs font-medium text-[#1e3a8a] mb-0.5">Planning n°{index}</p>
+              )}
               <h3 className="font-semibold text-gray-900 group-hover:text-[#1e3a8a] transition-colors">
                 {planning.residentName}
                 {planning.residentFirstName && (

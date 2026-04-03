@@ -88,8 +88,8 @@ export default function PlanningsListPage() {
         />
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
-          {plannings.map((p) => (
-            <ResidentCard key={p.id} planning={p} adminLink onDelete={handleDeletePlanning} />
+          {plannings.map((p, i) => (
+            <ResidentCard key={p.id} planning={p} adminLink onDelete={handleDeletePlanning} index={plannings.length > 1 ? i + 1 : undefined} />
           ))}
         </div>
       )}
