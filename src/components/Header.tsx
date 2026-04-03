@@ -37,7 +37,7 @@ export default function Header() {
             href="/admin"
             className="px-4 py-2 bg-gradient-to-r from-[#1e3a8a] to-[#3db54a] text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
           >
-            Organiser des visites
+            Se connecter
           </Link>
         </nav>
 
@@ -73,7 +73,7 @@ export default function Header() {
             className="block py-2 text-[#1e3a8a] text-sm font-medium"
             onClick={() => setMenuOpen(false)}
           >
-            Organiser des visites
+            Se connecter
           </Link>
         </div>
       )}
