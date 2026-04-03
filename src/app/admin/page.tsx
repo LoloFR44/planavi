@@ -48,18 +48,20 @@ export default function AdminPage() {
         return;
       }
 
-      sessionStorage.setItem(`admin_${matching.id}`, 'true');
-
-      // If multiple plannings, store them all
-      if (results.length > 1) {
-        for (const p of results) {
-          if (p.adminPassword === password) {
-            sessionStorage.setItem(`admin_${p.id}`, 'true');
-          }
+      // Sauvegarder la session admin
+      sessionStorage.setItem('admin_email', email.trim().toLowerCase());
+      for (const p of results) {
+        if (p.adminPassword === password) {
+          sessionStorage.setItem(`admin_${p.id}`, 'true');
         }
       }
 
-      router.push(`/admin/dashboard/plannings/${matching.id}`);
+      // Si plusieurs plannings, aller à la liste, sinon directement au planning
+      if (results.filter((p) => p.adminPassword === password).length > 1) {
+        router.push('/admin/dashboard');
+      } else {
+        router.push(`/admin/dashboard/plannings/${matching.id}`);
+      }
     } catch {
       setError('Un problème est survenu. Veuillez réessayer dans quelques instants.');
     } finally {

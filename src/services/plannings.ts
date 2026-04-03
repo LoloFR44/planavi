@@ -53,6 +53,19 @@ export async function getPlanningsByEmail(email: string): Promise<Planning[]> {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Planning);
 }
 
+export function subscribeToPlanningsByEmail(
+  email: string,
+  callback: (plannings: Planning[]) => void
+): Unsubscribe {
+  const q = query(collection(db, COLLECTION), where('adminEmail', '==', email.toLowerCase()));
+  return onSnapshot(q, (snap) => {
+    const plannings = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Planning)
+      .sort((a, b) => b.createdAt - a.createdAt);
+    callback(plannings);
+  });
+}
+
 export async function getAllPlannings(): Promise<Planning[]> {
   const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);

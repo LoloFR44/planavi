@@ -1,11 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PlanaviLogo from '@/components/ui/PlanaviLogo';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const email = sessionStorage.getItem('admin_email');
+    setIsAdmin(!!email);
+  }, []);
 
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-40">
@@ -18,10 +24,15 @@ export default function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden sm:flex items-center gap-6">
+        <nav className="hidden sm:flex items-center gap-4">
           <Link href="/" className="text-gray-600 hover:text-[#1e3a8a] transition-colors text-sm font-medium">
             Accueil
           </Link>
+          {isAdmin && (
+            <Link href="/admin/dashboard/plannings" className="text-gray-600 hover:text-[#1e3a8a] transition-colors text-sm font-medium">
+              Mes plannings
+            </Link>
+          )}
           <Link
             href="/admin"
             className="px-4 py-2 bg-gradient-to-r from-[#1e3a8a] to-[#3db54a] text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
@@ -52,6 +63,11 @@ export default function Header() {
           <Link href="/" className="block py-2 text-gray-600 text-sm font-medium" onClick={() => setMenuOpen(false)}>
             Accueil
           </Link>
+          {isAdmin && (
+            <Link href="/admin/dashboard/plannings" className="block py-2 text-[#1e3a8a] text-sm font-medium" onClick={() => setMenuOpen(false)}>
+              Mes plannings
+            </Link>
+          )}
           <Link
             href="/admin"
             className="block py-2 text-[#1e3a8a] text-sm font-medium"

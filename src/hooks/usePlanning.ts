@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { subscribeToPlanningBySlug, subscribeToPlannings } from '@/services/plannings';
+import { subscribeToPlanningBySlug, subscribeToPlannings, subscribeToPlanningsByEmail } from '@/services/plannings';
 import type { Planning } from '@/types';
 
 export function usePlanningBySlug(slug: string) {
@@ -32,6 +32,27 @@ export function usePlannings() {
     });
     return unsubscribe;
   }, []);
+
+  return { plannings, loading };
+}
+
+export function usePlanningsByEmail(email: string | null) {
+  const [plannings, setPlannings] = useState<Planning[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!email) {
+      setPlannings([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const unsubscribe = subscribeToPlanningsByEmail(email, (p) => {
+      setPlannings(p);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, [email]);
 
   return { plannings, loading };
 }

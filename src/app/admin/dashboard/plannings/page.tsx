@@ -1,25 +1,55 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePlannings } from '@/hooks/usePlanning';
+import { usePlanningsByEmail } from '@/hooks/usePlanning';
 import ResidentCard from '@/components/ResidentCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import EmptyState from '@/components/ui/EmptyState';
 
 export default function PlanningsListPage() {
-  const { plannings, loading } = usePlannings();
+  const [email, setEmail] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const storedEmail = sessionStorage.getItem('admin_email');
+    if (!storedEmail) {
+      router.push('/admin');
+      return;
+    }
+    setEmail(storedEmail);
+  }, [router]);
+
+  const { plannings, loading } = usePlanningsByEmail(email);
+
+  if (!email) return <LoadingSpinner />;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">Plannings</h1>
-        <Link
-          href="/admin/dashboard/plannings/new"
-          className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
-          style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
-        >
-          + Nouveau planning
-        </Link>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Mes plannings</h1>
+          <p className="text-sm text-gray-400">Connecté avec {email}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/dashboard/plannings/new"
+            className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
+            style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
+          >
+            + Nouveau planning
+          </Link>
+          <button
+            onClick={() => {
+              sessionStorage.clear();
+              router.push('/admin');
+            }}
+            className="px-4 py-2 text-sm text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Déconnexion
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -28,14 +58,14 @@ export default function PlanningsListPage() {
         <EmptyState
           icon="📋"
           title="Aucun planning créé"
-          description="Commencez par créer un planning pour organiser les visites."
+          description="Commencez par créer un planning pour organiser les visites de vos proches."
           action={
             <Link
               href="/admin/dashboard/plannings/new"
               className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
               style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
             >
-              Créer un planning
+              Créer mon premier planning
             </Link>
           }
         />
