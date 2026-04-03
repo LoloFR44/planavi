@@ -102,7 +102,7 @@ export default function HomePage() {
               ))}
             </div>
             <Link
-              href="/admin/dashboard/plannings/new"
+              href="/gestion/dashboard/plannings/new"
               className="inline-flex items-center justify-center px-6 py-3 bg-white text-[#1e3a8a] font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
             >
               Créer un planning gratuitement

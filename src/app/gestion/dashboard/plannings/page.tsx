@@ -18,7 +18,7 @@ export default function PlanningsListPage() {
   useEffect(() => {
     const storedEmail = sessionStorage.getItem('admin_email');
     if (!storedEmail) {
-      router.push('/admin');
+      router.push('/gestion');
       return;
     }
     setEmail(storedEmail);
@@ -43,7 +43,7 @@ export default function PlanningsListPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/dashboard/plannings/new"
+            href="/gestion/dashboard/plannings/new"
             className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
             style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
           >
@@ -52,7 +52,7 @@ export default function PlanningsListPage() {
           <button
             onClick={() => {
               sessionStorage.clear();
-              router.push('/admin');
+              router.push('/gestion');
             }}
             className="px-4 py-2 text-sm text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
           >
@@ -70,7 +70,7 @@ export default function PlanningsListPage() {
           description="Commencez par créer un planning pour organiser les visites de vos proches."
           action={
             <Link
-              href="/admin/dashboard/plannings/new"
+              href="/gestion/dashboard/plannings/new"
               className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
               style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
             >

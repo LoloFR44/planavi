@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
-  { href: '/admin/dashboard', label: 'Tableau de bord', icon: '📊' },
-  { href: '/admin/dashboard/plannings', label: 'Plannings', icon: '📋' },
-  { href: '/admin/dashboard/plannings/new', label: 'Nouveau planning', icon: '➕' },
+  { href: '/gestion/dashboard', label: 'Tableau de bord', icon: '📊' },
+  { href: '/gestion/dashboard/plannings', label: 'Plannings', icon: '📋' },
+  { href: '/gestion/dashboard/plannings/new', label: 'Nouveau planning', icon: '➕' },
 ];
 
 export default function AdminSidebar() {
@@ -18,7 +18,7 @@ export default function AdminSidebar() {
         <Link href="/" className="text-xl font-bold bg-gradient-to-r from-[#1e3a8a] to-[#3db54a] bg-clip-text text-transparent">
           Planavi
         </Link>
-        <p className="text-xs text-gray-400 mt-1">Administration</p>
+        <p className="text-xs text-gray-400 mt-1">Gestion</p>
       </div>
 
       <nav className="space-y-1">

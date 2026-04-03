@@ -101,7 +101,7 @@ export default function ManagePlanningPage({
     return (
       <div className="text-center py-16">
         <h1 className="text-xl font-bold text-gray-800">Planning introuvable</h1>
-        <Link href="/admin/dashboard" className="text-[#1e3a8a] text-sm mt-2 inline-block">
+        <Link href="/gestion/dashboard" className="text-[#1e3a8a] text-sm mt-2 inline-block">
           Retour au tableau de bord
         </Link>
       </div>

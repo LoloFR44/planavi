@@ -10,7 +10,7 @@ export default function NewPlanningPage() {
 
   const handleSubmit = async (data: PlanningFormData) => {
     const id = await createPlanning(data);
-    router.push(`/admin/dashboard/plannings/${id}`);
+    router.push(`/gestion/dashboard/plannings/${id}`);
   };
 
   return (

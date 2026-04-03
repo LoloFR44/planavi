@@ -22,7 +22,7 @@ export default function ResidentCard({ planning, adminLink, onDelete }: Resident
   const [deleting, setDeleting] = useState(false);
 
   const href = adminLink
-    ? `/admin/dashboard/plannings/${planning.id}`
+    ? `/gestion/dashboard/plannings/${planning.id}`
     : `/planning/${planning.slug}`;
 
   const handleDelete = async () => {

@@ -17,7 +17,7 @@ export default function AdminDashboardPage() {
           <p className="text-sm text-gray-500 mt-1">Vue d'ensemble de vos plannings</p>
         </div>
         <Link
-          href="/admin/dashboard/plannings/new"
+          href="/gestion/dashboard/plannings/new"
           className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
           style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
         >
@@ -57,7 +57,7 @@ export default function AdminDashboardPage() {
           description="Créez votre premier planning pour commencer à organiser les visites."
           action={
             <Link
-              href="/admin/dashboard/plannings/new"
+              href="/gestion/dashboard/plannings/new"
               className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
               style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
             >

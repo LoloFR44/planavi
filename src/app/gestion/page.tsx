@@ -58,9 +58,9 @@ export default function AdminPage() {
 
       // Si plusieurs plannings, aller à la liste, sinon directement au planning
       if (results.filter((p) => p.adminPassword === password).length > 1) {
-        router.push('/admin/dashboard');
+        router.push('/gestion/dashboard');
       } else {
-        router.push(`/admin/dashboard/plannings/${matching.id}`);
+        router.push(`/gestion/dashboard/plannings/${matching.id}`);
       }
     } catch {
       setError('Un problème est survenu. Veuillez réessayer dans quelques instants.');
@@ -137,7 +137,7 @@ export default function AdminPage() {
                   </p>
                 </div>
                 <Link
-                  href="/admin/dashboard/plannings/new"
+                  href="/gestion/dashboard/plannings/new"
                   className="block w-full py-4 text-white text-lg font-semibold rounded-xl text-center hover:shadow-md transition-all"
                   style={{ background: 'linear-gradient(135deg, #3db54a, #2d9639)' }}
                 >

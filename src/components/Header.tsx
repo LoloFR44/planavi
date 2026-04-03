@@ -29,12 +29,12 @@ export default function Header() {
             Accueil
           </Link>
           {isAdmin && (
-            <Link href="/admin/dashboard/plannings" className="text-gray-600 hover:text-[#1e3a8a] transition-colors text-sm font-medium">
+            <Link href="/gestion/dashboard/plannings" className="text-gray-600 hover:text-[#1e3a8a] transition-colors text-sm font-medium">
               Mes plannings
             </Link>
           )}
           <Link
-            href="/admin"
+            href="/gestion"
             className="px-4 py-2 bg-gradient-to-r from-[#1e3a8a] to-[#3db54a] text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
           >
             Se connecter
@@ -64,12 +64,12 @@ export default function Header() {
             Accueil
           </Link>
           {isAdmin && (
-            <Link href="/admin/dashboard/plannings" className="block py-2 text-[#1e3a8a] text-sm font-medium" onClick={() => setMenuOpen(false)}>
+            <Link href="/gestion/dashboard/plannings" className="block py-2 text-[#1e3a8a] text-sm font-medium" onClick={() => setMenuOpen(false)}>
               Mes plannings
             </Link>
           )}
           <Link
-            href="/admin"
+            href="/gestion"
             className="block py-2 text-[#1e3a8a] text-sm font-medium"
             onClick={() => setMenuOpen(false)}
           >
