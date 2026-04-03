@@ -2,10 +2,12 @@ import {
   collection,
   doc,
   addDoc,
+  getDocs,
   deleteDoc,
   query,
   where,
   onSnapshot,
+  writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '@/firebase/config';
@@ -24,6 +26,17 @@ export async function createMessage(data: MessageFormData): Promise<string> {
 
 export async function deleteMessage(id: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTION, id));
+}
+
+export async function deleteMessagesForPlanning(planningId: string): Promise<void> {
+  const q = query(collection(db, COLLECTION), where('planningId', '==', planningId));
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+  const batch = writeBatch(db);
+  for (const d of snap.docs) {
+    batch.delete(doc(db, COLLECTION, d.id));
+  }
+  await batch.commit();
 }
 
 export function subscribeToMessages(

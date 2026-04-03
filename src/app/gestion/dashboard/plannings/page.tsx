@@ -7,6 +7,7 @@ import { usePlanningsByEmail } from '@/hooks/usePlanning';
 import { deletePlanning } from '@/services/plannings';
 import { deleteTimeSlotsForPlanning } from '@/services/timeSlots';
 import { deleteBookingsForPlanning } from '@/services/bookings';
+import { deleteMessagesForPlanning } from '@/services/messages';
 import ResidentCard from '@/components/ResidentCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import EmptyState from '@/components/ui/EmptyState';
@@ -27,8 +28,15 @@ export default function PlanningsListPage() {
   const { plannings, loading } = usePlanningsByEmail(email);
 
   const handleDeletePlanning = async (id: string) => {
-    await deleteTimeSlotsForPlanning(id);
-    await deleteBookingsForPlanning(id);
+    try {
+      await deleteTimeSlotsForPlanning(id);
+    } catch (e) { console.error('Erreur suppression créneaux:', e); }
+    try {
+      await deleteBookingsForPlanning(id);
+    } catch (e) { console.error('Erreur suppression réservations:', e); }
+    try {
+      await deleteMessagesForPlanning(id);
+    } catch (e) { console.error('Erreur suppression messages:', e); }
     await deletePlanning(id);
   };
 

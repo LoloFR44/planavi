@@ -2,12 +2,29 @@
 
 import Link from 'next/link';
 import { usePlannings } from '@/hooks/usePlanning';
+import { deletePlanning } from '@/services/plannings';
+import { deleteTimeSlotsForPlanning } from '@/services/timeSlots';
+import { deleteBookingsForPlanning } from '@/services/bookings';
+import { deleteMessagesForPlanning } from '@/services/messages';
 import ResidentCard from '@/components/ResidentCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import EmptyState from '@/components/ui/EmptyState';
 
 export default function AdminDashboardPage() {
   const { plannings, loading } = usePlannings();
+
+  const handleDeletePlanning = async (id: string) => {
+    try {
+      await deleteTimeSlotsForPlanning(id);
+    } catch (e) { console.error('Erreur suppression créneaux:', e); }
+    try {
+      await deleteBookingsForPlanning(id);
+    } catch (e) { console.error('Erreur suppression réservations:', e); }
+    try {
+      await deleteMessagesForPlanning(id);
+    } catch (e) { console.error('Erreur suppression messages:', e); }
+    await deletePlanning(id);
+  };
 
   return (
     <div>
@@ -68,7 +85,7 @@ export default function AdminDashboardPage() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {plannings.map((p) => (
-            <ResidentCard key={p.id} planning={p} adminLink />
+            <ResidentCard key={p.id} planning={p} adminLink onDelete={handleDeletePlanning} />
           ))}
         </div>
       )}
