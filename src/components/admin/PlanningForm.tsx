@@ -17,18 +17,13 @@ type NominatimResult = {
   address: Record<string, string>;
 };
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+function generateCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer le planning' }: PlanningFormProps) {
   const [form, setForm] = useState<PlanningFormData>({
-    slug: initial?.slug || '',
+    slug: initial?.slug || generateCode(),
     title: initial?.title || '',
     residentName: initial?.residentName || '',
     residentFirstName: initial?.residentFirstName || '',
@@ -111,11 +106,7 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
 
   const updateField = (field: keyof PlanningFormData, value: string | number | boolean) => {
     setForm((prev) => {
-      const next = { ...prev, [field]: value };
-      if (field === 'residentName' && !initial?.slug) {
-        next.slug = slugify(value as string);
-      }
-      return next;
+      return { ...prev, [field]: value };
     });
   };
 
@@ -253,12 +244,12 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
             <p className="text-xs text-gray-400 mt-1">C&apos;est le titre principal affiché en haut de la page</p>
           </div>
           <div>
-            <label className={labelClass}>Adresse courte du planning (URL)</label>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400 shrink-0">planning-visites.fr/planning/</span>
-              <input type="text" value={form.slug} onChange={(e) => updateField('slug', slugify(e.target.value))} className={inputClass} required />
+            <label className={labelClass}>Code de votre planning</label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">planning-visites.fr/planning/</span>
+              <span className="text-lg font-mono font-bold text-[#1e3a8a]">{form.slug}</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Se remplit automatiquement à partir du nom de famille</p>
+            <p className="text-xs text-gray-400 mt-1">Ce code est généré automatiquement, il servira à accéder à votre planning</p>
           </div>
           <div>
             <label className={labelClass}>Durée d&apos;une visite</label>
