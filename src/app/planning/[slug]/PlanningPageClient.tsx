@@ -78,7 +78,6 @@ export default function PlanningPageClient({ slug }: { slug: string }) {
                   <span className="px-2 py-0.5 bg-[#1e3a8a]/5 text-[#1e3a8a] rounded-full text-xs font-semibold">
                     {TYPE_LABELS[planning.residentType] || planning.residentType}
                   </span>
-                  {planning.locationName && <span className="text-xs">{planning.locationName}</span>}
                   {planning.room && (
                     <>
                       <span className="text-gray-300">·</span>
@@ -88,7 +87,7 @@ export default function PlanningPageClient({ slug }: { slug: string }) {
                   {planning.address && (
                     <>
                       <span className="text-gray-300">·</span>
-                      <span className="text-xs text-gray-400">{planning.address}</span>
+                      <span className="text-xs font-semibold text-gray-600">{planning.address}</span>
                     </>
                   )}
                 </div>
