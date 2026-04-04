@@ -53,6 +53,10 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
       if (!map[slot.date]) map[slot.date] = [];
       map[slot.date].push(slot);
     }
+    // Trier les créneaux par heure de début dans chaque journée
+    for (const date of Object.keys(map)) {
+      map[date].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    }
     return map;
   }, [timeSlots]);
 

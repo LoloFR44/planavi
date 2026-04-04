@@ -15,6 +15,7 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
   const totalVisitors = bookings.reduce((sum, b) => sum + b.visitorCount, 0);
   const isFull = slot.capacity > 0 && totalVisitors >= slot.capacity;
   const spotsLeft = slot.capacity > 0 ? slot.capacity - totalVisitors : null;
+  const hasBookings = bookings.length > 0;
 
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [cancelName, setCancelName] = useState('');
@@ -55,7 +56,9 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
           ? 'bg-gray-50 border-gray-200 opacity-50'
           : isFull
             ? 'bg-amber-50 border-amber-200'
-            : 'bg-white border-[#3db54a]/20 hover:border-[#3db54a]/40 hover:shadow-sm'
+            : hasBookings
+              ? 'bg-red-50 border-red-200'
+              : 'bg-white border-[#3db54a]/20 hover:border-[#3db54a]/40 hover:shadow-sm'
       }`}
     >
       {/* Time + status */}
@@ -69,10 +72,12 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
               ? 'bg-gray-100 text-gray-500'
               : isFull
                 ? 'bg-amber-100 text-amber-700'
-                : 'bg-[#3db54a]/10 text-[#3db54a]'
+                : hasBookings
+                  ? 'bg-red-100 text-red-600'
+                  : 'bg-[#3db54a]/10 text-[#3db54a]'
           }`}
         >
-          {isClosed ? 'Fermé' : isFull ? 'Complet' : spotsLeft !== null ? `${spotsLeft} place${spotsLeft > 1 ? 's' : ''}` : 'Disponible'}
+          {isClosed ? 'Fermé' : isFull ? 'Complet' : hasBookings ? (spotsLeft !== null ? `${spotsLeft} place${spotsLeft > 1 ? 's' : ''}` : `${bookings.length} réservation${bookings.length > 1 ? 's' : ''}`) : spotsLeft !== null ? `${spotsLeft} place${spotsLeft > 1 ? 's' : ''}` : 'Disponible'}
         </span>
       </div>
 
