@@ -37,6 +37,7 @@ export async function generateMetadata({
       type: 'website',
       url: `${appUrl}/planning/${slug}`,
       locale: 'fr_FR',
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `Planavi - Visites ${planning.residentName}` }],
     },
     twitter: {
       card: 'summary',

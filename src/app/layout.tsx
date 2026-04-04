@@ -17,7 +17,10 @@ export const metadata: Metadata = {
   title: "Planavi - Visitez vos proches",
   description: "Organisez et planifiez les visites de vos proches simplement. Planning partagé pour familles, aidants et établissements.",
   icons: {
-    icon: '/planavi-favicon.svg',
+    icon: [
+      { url: '/planavi-favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
     shortcut: '/planavi-favicon.svg',
     apple: '/planavi-favicon.svg',
   },
@@ -28,6 +31,7 @@ export const metadata: Metadata = {
     locale: 'fr_FR',
     title: 'Planavi - Visitez vos proches, simplement',
     description: 'Organisez les visites de vos proches avec un planning partagé. Gratuit, sans inscription pour les visiteurs.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Planavi - Visitez vos proches' }],
   },
   twitter: {
     card: 'summary',
