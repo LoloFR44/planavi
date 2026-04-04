@@ -52,6 +52,8 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     setForm((prev) => ({ ...prev, selectedDays: [1, 2, 3, 4, 5, 6, 0] }));
   };
 
+  const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
   // Compute how many matching days in the range
   const countMatchingDays = (): number => {
     if (!form.startDate) return 0;
@@ -64,6 +66,23 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     return count;
   };
 
+  // Auto-select the day of week when a single date is chosen (no end date)
+  const handleStartDateChange = (value: string) => {
+    const updated = { ...form, startDate: value };
+    if (value && !form.endDate) {
+      const dayOfWeek = new Date(value + 'T00:00:00').getDay();
+      if (!form.selectedDays.includes(dayOfWeek)) {
+        updated.selectedDays = [...form.selectedDays, dayOfWeek];
+      }
+    }
+    setForm(updated);
+  };
+
+  // Helper: what day is the start date
+  const startDayLabel = form.startDate
+    ? DAY_NAMES[new Date(form.startDate + 'T00:00:00').getDay()]
+    : '';
+
   // Compute preview of what will be created
   const computePreview = (): string => {
     if (!form.startTime || !form.endTime) return '';
@@ -74,7 +93,12 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     if (endMin <= startMin) return '';
 
     const days = countMatchingDays();
-    if (days === 0) return 'Aucun jour ne correspond à votre sélection';
+    if (days === 0) {
+      if (!form.endDate) {
+        return `Le ${form.startDate.split('-').reverse().join('/')} est un ${startDayLabel}. Cochez ce jour dans la liste ci-dessus.`;
+      }
+      return 'Aucun jour coché ne tombe dans la période sélectionnée.';
+    }
 
     if (!form.splitSlots) {
       const fmtStart = form.startTime.replace(':', 'h');
@@ -195,7 +219,12 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Date de début *</label>
-          <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className={inputClass} required />
+          <input type="date" value={form.startDate} onChange={(e) => handleStartDateChange(e.target.value)} className={inputClass} required />
+          {startDayLabel && (
+            <p className="text-xs text-[#1e3a8a] mt-1 font-medium">
+              {startDayLabel.charAt(0).toUpperCase() + startDayLabel.slice(1)} {form.startDate.split('-').reverse().join('/')}
+            </p>
+          )}
         </div>
         <div>
           <label className={labelClass}>Date de fin (optionnel)</label>
