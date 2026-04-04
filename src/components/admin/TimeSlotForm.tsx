@@ -20,6 +20,9 @@ const DAYS_OF_WEEK = [
   { key: 0, label: 'Dim', full: 'Dimanche' },
 ];
 
+const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+const DEFAULT_WEEKS = 4;
+
 export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }: TimeSlotFormProps) {
   const [form, setForm] = useState({
     startDate: '',
@@ -52,13 +55,24 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     setForm((prev) => ({ ...prev, selectedDays: [1, 2, 3, 4, 5, 6, 0] }));
   };
 
-  const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  // Compute effective end date: if no end date, default to N weeks from start
+  const getEffectiveEnd = (): Date | null => {
+    if (!form.startDate) return null;
+    if (form.endDate) return new Date(form.endDate + 'T00:00:00');
+    const d = new Date(form.startDate + 'T00:00:00');
+    d.setDate(d.getDate() + DEFAULT_WEEKS * 7 - 1);
+    return d;
+  };
+
+  const formatDateFr = (d: Date): string => {
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  };
 
   // Compute how many matching days in the range
   const countMatchingDays = (): number => {
     if (!form.startDate) return 0;
     const start = new Date(form.startDate + 'T00:00:00');
-    const end = form.endDate ? new Date(form.endDate + 'T00:00:00') : start;
+    const end = getEffectiveEnd()!;
     let count = 0;
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       if (form.selectedDays.includes(d.getDay())) count++;
@@ -66,22 +80,16 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     return count;
   };
 
-  // Auto-select the day of week when a single date is chosen (no end date)
-  const handleStartDateChange = (value: string) => {
-    const updated = { ...form, startDate: value };
-    if (value && !form.endDate) {
-      const dayOfWeek = new Date(value + 'T00:00:00').getDay();
-      if (!form.selectedDays.includes(dayOfWeek)) {
-        updated.selectedDays = [...form.selectedDays, dayOfWeek];
-      }
-    }
-    setForm(updated);
+  // Helper: selected day labels
+  const selectedDayLabels = (): string => {
+    const labels = DAYS_OF_WEEK
+      .filter((d) => form.selectedDays.includes(d.key))
+      .map((d) => d.full.toLowerCase());
+    if (labels.length === 0) return '';
+    if (labels.length === 7) return 'tous les jours';
+    if (labels.length === 5 && [1, 2, 3, 4, 5].every((k) => form.selectedDays.includes(k))) return 'du lundi au vendredi';
+    return labels.join(', ');
   };
-
-  // Helper: what day is the start date
-  const startDayLabel = form.startDate
-    ? DAY_NAMES[new Date(form.startDate + 'T00:00:00').getDay()]
-    : '';
 
   // Compute preview of what will be created
   const computePreview = (): string => {
@@ -92,23 +100,25 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     const endMin = eH * 60 + eM;
     if (endMin <= startMin) return '';
 
+    if (form.selectedDays.length === 0) return 'Sélectionnez au moins un jour de la semaine.';
+
     const days = countMatchingDays();
-    if (days === 0) {
-      if (!form.endDate) {
-        return `Le ${form.startDate.split('-').reverse().join('/')} est un ${startDayLabel}. Cochez ce jour dans la liste ci-dessus.`;
-      }
-      return 'Aucun jour coché ne tombe dans la période sélectionnée.';
-    }
+    if (days === 0) return 'Aucun jour coché ne tombe dans la période sélectionnée.';
+
+    const effectiveEnd = getEffectiveEnd()!;
+    const periodInfo = !form.endDate
+      ? ` (jusqu'au ${formatDateFr(effectiveEnd)})`
+      : '';
 
     if (!form.splitSlots) {
       const fmtStart = form.startTime.replace(':', 'h');
       const fmtEnd = form.endTime.replace(':', 'h');
-      return `${days} créneau${days > 1 ? 'x' : ''} de ${fmtStart} à ${fmtEnd}`;
+      return `${days} créneau${days > 1 ? 'x' : ''} de ${fmtStart} à ${fmtEnd}, ${selectedDayLabels()}${periodInfo}`;
     } else {
       const count = Math.floor((endMin - startMin) / form.slotDuration);
       if (count <= 0) return 'Durée trop longue pour cette plage';
       const total = count * days;
-      return `${total} créneau${total > 1 ? 'x' : ''} de ${form.slotDuration} min sur ${days} jour${days > 1 ? 's' : ''}`;
+      return `${total} créneau${total > 1 ? 'x' : ''} de ${form.slotDuration} min, ${selectedDayLabels()}${periodInfo}`;
     }
   };
 
@@ -137,7 +147,7 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     try {
       const slots: TimeSlotFormData[] = [];
       const start = new Date(form.startDate + 'T00:00:00');
-      const end = form.endDate ? new Date(form.endDate + 'T00:00:00') : start;
+      const end = getEffectiveEnd()!;
 
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         // Ne créer que pour les jours cochés
@@ -211,6 +221,10 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
     setForm({ ...form, [field]: `${h}:${m}` });
   };
 
+  const startDayLabel = form.startDate
+    ? DAY_NAMES[new Date(form.startDate + 'T00:00:00').getDay()]
+    : '';
+
   const preview = form.startDate && form.startTime && form.endTime ? computePreview() : '';
 
   return (
@@ -218,8 +232,8 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
       {/* Dates */}
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
-          <label className={labelClass}>Date de début *</label>
-          <input type="date" value={form.startDate} onChange={(e) => handleStartDateChange(e.target.value)} className={inputClass} required />
+          <label className={labelClass}>A partir du *</label>
+          <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className={inputClass} required />
           {startDayLabel && (
             <p className="text-xs text-[#1e3a8a] mt-1 font-medium">
               {startDayLabel.charAt(0).toUpperCase() + startDayLabel.slice(1)} {form.startDate.split('-').reverse().join('/')}
@@ -227,9 +241,11 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
           )}
         </div>
         <div>
-          <label className={labelClass}>Date de fin (optionnel)</label>
+          <label className={labelClass}>Jusqu&apos;au (optionnel)</label>
           <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className={inputClass} />
-          <p className="text-xs text-gray-400 mt-1">Laissez vide pour un seul jour</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {form.endDate ? '' : `Par défaut : ${DEFAULT_WEEKS} semaines`}
+          </p>
         </div>
       </div>
 
