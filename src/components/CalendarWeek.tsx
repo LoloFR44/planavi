@@ -46,7 +46,12 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const days = useMemo(() => getWeekDays(weekStart), [weekStart]);
-  const today = formatDateKey(new Date());
+  // Use midnight local time so `today` key is consistent with calendar day keys
+  // (formatDateKey uses toISOString which shifts to UTC — both must start from midnight local)
+  const today = useMemo(() => {
+    const now = new Date();
+    return formatDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  }, []);
 
   // Index slots by date
   const slotsByDate = useMemo(() => {

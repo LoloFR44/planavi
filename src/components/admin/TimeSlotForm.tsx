@@ -153,7 +153,7 @@ export default function TimeSlotForm({ planningId, defaultDuration, onSuccess }:
         // Ne créer que pour les jours cochés
         if (!form.selectedDays.includes(d.getDay())) continue;
 
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
         if (form.splitSlots && form.slotDuration > 0) {
           const startMinutes = sH * 60 + sM;
