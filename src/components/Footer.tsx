@@ -8,6 +8,9 @@ export default function Footer() {
           Planavi
         </span>
         <div className="flex items-center gap-4">
+          <Link href="/contact" className="text-xs text-gray-400 hover:text-[#1e3a8a]">
+            Contact
+          </Link>
           <Link href="/cgu" className="text-xs text-gray-400 hover:text-[#1e3a8a]">
             CGU
           </Link>

@@ -22,7 +22,7 @@ export default function MentionsLegalesPage() {
               <p>
                 Le site planning-visites.fr est édité par :<br />
                 <strong>Loic Fleury</strong><br />
-                Adresse email : <a href="mailto:contact@planning-visites.fr" className="text-[#1e3a8a] hover:underline">contact@planning-visites.fr</a>
+                Adresse email : <a href="/contact" className="text-[#1e3a8a] hover:underline">formulaire de contact</a>
               </p>
               <p className="mt-2">
                 Ce site est un projet personnel à but non lucratif.
@@ -72,7 +72,7 @@ export default function MentionsLegalesPage() {
                 <li><strong>Droit d&apos;opposition</strong> : vous opposer au traitement de vos données</li>
               </ul>
               <p className="mt-2">
-                Pour exercer ces droits, contactez : <a href="mailto:contact@planning-visites.fr" className="text-[#1e3a8a] hover:underline">contact@planning-visites.fr</a>
+                Pour exercer ces droits, contactez : <a href="/contact" className="text-[#1e3a8a] hover:underline">formulaire de contact</a>
               </p>
               <p className="mt-2">
                 En cas de litige, vous pouvez adresser une réclamation à la CNIL :<br />
