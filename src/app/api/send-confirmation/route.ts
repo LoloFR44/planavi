@@ -20,7 +20,8 @@ interface ConfirmationPayload {
 }
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1, day);
   return d.toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
