@@ -29,6 +29,7 @@ export default function ManagePlanningPage({
   const [activeTab, setActiveTab] = useState<'slots' | 'bookings' | 'messages'>('slots');
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [shareUrl, setShareUrl] = useState('');
+  const [manageUrl, setManageUrl] = useState('');
   const [adminMessage, setAdminMessage] = useState('');
 
   const { timeSlots } = useTimeSlots(id);
@@ -51,6 +52,9 @@ export default function ManagePlanningPage({
   useEffect(() => {
     if (planning && typeof window !== 'undefined') {
       setShareUrl(`${window.location.origin}/planning/${planning.slug}`);
+      if (planning.adminToken) {
+        setManageUrl(`${window.location.origin}/gestion/planning/${planning.adminToken}`);
+      }
     }
   }, [planning]);
 
@@ -166,6 +170,34 @@ export default function ManagePlanningPage({
           )}
         </div>
       </div>
+
+      {/* Share management link */}
+      {manageUrl && (
+        <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 mb-4">
+          <h2 className="text-sm font-bold text-amber-800 mb-1">Partager l&apos;accès gestion</h2>
+          <p className="text-xs text-amber-700 mb-2">
+            Ce lien permet à un membre de votre famille de gérer ce planning (créneaux, réservations, messages) sans avoir besoin de se connecter.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              readOnly
+              value={manageUrl}
+              className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded-lg text-xs text-gray-600 select-all"
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+            />
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(manageUrl);
+                setToast({ type: 'success', message: 'Lien de gestion copié !' });
+              }}
+              className="px-4 py-2 text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 transition-colors shrink-0"
+            >
+              Copier
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Admin message */}
       <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4">

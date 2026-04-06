@@ -43,7 +43,8 @@ service cloud.firestore {
     match /messages/{messageId} {
       allow create: if request.resource.data.keys().hasAll(['planningId', 'content', 'createdAt']);
       allow read: if true;
-      allow update, delete: if false;
+      allow delete: if true;
+      allow update: if false;
     }
 
     // ── Deny everything else ───────────────────────────

@@ -18,6 +18,7 @@ export interface Planning {
   adminPassword: string;
   adminName?: string;
   adminEmail?: string;
+  adminToken?: string;
   createdAt: number;
   updatedAt: number;
 }

@@ -18,6 +18,15 @@ import type { Planning, PlanningFormData } from '@/types';
 
 const COLLECTION = 'plannings';
 
+function generateAdminToken(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let token = '';
+  for (let i = 0; i < 24; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
 export async function createPlanning(data: PlanningFormData): Promise<string> {
   const existing = await getPlanningBySlug(data.slug);
   if (existing) throw new Error('Ce slug est déjà utilisé');
@@ -26,6 +35,7 @@ export async function createPlanning(data: PlanningFormData): Promise<string> {
   const normalizedData = {
     ...data,
     adminEmail: data.adminEmail?.toLowerCase(),
+    adminToken: generateAdminToken(),
     createdAt: now,
     updatedAt: now,
   };
@@ -36,7 +46,16 @@ export async function createPlanning(data: PlanningFormData): Promise<string> {
 export async function getPlanningById(id: string): Promise<Planning | null> {
   const snap = await getDoc(doc(db, COLLECTION, id));
   if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as Planning;
+  const planning = { id: snap.id, ...snap.data() } as Planning;
+
+  // Auto-generate token for existing plannings that don't have one
+  if (!planning.adminToken) {
+    const token = generateAdminToken();
+    await updateDoc(doc(db, COLLECTION, id), { adminToken: token });
+    planning.adminToken = token;
+  }
+
+  return planning;
 }
 
 export async function getPlanningBySlug(slug: string): Promise<Planning | null> {
@@ -45,6 +64,29 @@ export async function getPlanningBySlug(slug: string): Promise<Planning | null> 
   if (snap.empty) return null;
   const d = snap.docs[0];
   return { id: d.id, ...d.data() } as Planning;
+}
+
+export async function getPlanningByToken(token: string): Promise<Planning | null> {
+  const q = query(collection(db, COLLECTION), where('adminToken', '==', token));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, ...d.data() } as Planning;
+}
+
+export function subscribeToPlanningByToken(
+  token: string,
+  callback: (planning: Planning | null) => void
+): Unsubscribe {
+  const q = query(collection(db, COLLECTION), where('adminToken', '==', token));
+  return onSnapshot(q, (snap) => {
+    if (snap.empty) {
+      callback(null);
+    } else {
+      const d = snap.docs[0];
+      callback({ id: d.id, ...d.data() } as Planning);
+    }
+  });
 }
 
 export async function getPlanningsByEmail(email: string): Promise<Planning[]> {
