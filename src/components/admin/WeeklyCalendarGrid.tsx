@@ -92,10 +92,19 @@ export default function WeeklyCalendarGrid({
     return Array.from(rangeSet).sort();
   }, [weekDays, slotsByDate]);
 
-  const bookingsBySlot = useMemo(() => {
+  const bookingCountBySlot = useMemo(() => {
     const map: Record<string, number> = {};
     for (const b of bookings) {
       map[b.timeSlotId] = (map[b.timeSlotId] || 0) + b.visitorCount;
+    }
+    return map;
+  }, [bookings]);
+
+  const bookingNamesBySlot = useMemo(() => {
+    const map: Record<string, Booking[]> = {};
+    for (const b of bookings) {
+      if (!map[b.timeSlotId]) map[b.timeSlotId] = [];
+      map[b.timeSlotId].push(b);
     }
     return map;
   }, [bookings]);
@@ -137,7 +146,7 @@ export default function WeeklyCalendarGrid({
     const daySlots = slotsByDate[dayKey] || [];
     let total = 0;
     for (const s of daySlots) {
-      total += bookingsBySlot[s.id] || 0;
+      total += bookingCountBySlot[s.id] || 0;
     }
     return total;
   };
@@ -362,7 +371,7 @@ export default function WeeklyCalendarGrid({
                         const dayKey = formatDateKey(day);
                         const slot = findSlot(dayKey, range);
                         const today = isToday(day);
-                        const count = slot ? (bookingsBySlot[slot.id] || 0) : 0;
+                        const count = slot ? (bookingCountBySlot[slot.id] || 0) : 0;
 
                         if (!slot) {
                           return (
@@ -380,11 +389,15 @@ export default function WeeklyCalendarGrid({
                         const isClosed = slot.status !== 'available';
                         const isFull = slot.capacity > 0 && count >= slot.capacity;
                         const isSelected = selected.has(slot.id);
+                        const slotBookings = bookingNamesBySlot[slot.id] || [];
+                        const tooltipText = slotBookings.length > 0
+                          ? slotBookings.map((b) => `${b.visitorFirstName} ${b.visitorLastName}${b.visitorCount > 1 ? ` (+${b.visitorCount - 1})` : ''}${b.visitorRelation ? ` — ${b.visitorRelation}` : ''}`).join('\n')
+                          : '';
 
                         return (
                           <td
                             key={i}
-                            className={`py-2 px-1 text-center border-l border-gray-100 cursor-pointer ${
+                            className={`py-2 px-1 text-center border-l border-gray-100 cursor-pointer relative group ${
                               today ? 'bg-[#3db54a]/5' : ''
                             } ${isSelected ? 'bg-red-50' : 'hover:bg-gray-50'}`}
                             onClick={() => toggleSlotSelection(slot.id)}
@@ -414,7 +427,9 @@ export default function WeeklyCalendarGrid({
                                 ? 'bg-gray-100 text-gray-400'
                                 : isFull
                                   ? 'bg-orange-50 text-orange-600'
-                                  : 'bg-[#3db54a]/10 text-[#3db54a]'
+                                  : count > 0
+                                    ? 'bg-[#1e3a8a]/10 text-[#1e3a8a]'
+                                    : 'bg-[#3db54a]/10 text-[#3db54a]'
                             }`}>
                               <span className="text-xs font-bold">
                                 {count}{slot.capacity > 0 ? `/${slot.capacity}` : ''}
@@ -423,6 +438,25 @@ export default function WeeklyCalendarGrid({
                                 visiteur{count !== 1 ? 's' : ''}
                               </span>
                             </div>
+                            {/* Tooltip with visitor names on hover */}
+                            {slotBookings.length > 0 && (
+                              <div className="absolute z-20 bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block pointer-events-none">
+                                <div className="bg-gray-900 text-white text-[11px] rounded-lg px-3 py-2 shadow-lg whitespace-nowrap">
+                                  {slotBookings.map((b) => (
+                                    <div key={b.id} className="flex items-center gap-1.5 py-0.5">
+                                      <span className="font-medium">{b.visitorFirstName} {b.visitorLastName}</span>
+                                      {b.visitorCount > 1 && (
+                                        <span className="text-gray-400">(+{b.visitorCount - 1})</span>
+                                      )}
+                                      {b.visitorRelation && (
+                                        <span className="text-gray-400">— {b.visitorRelation}</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1" />
+                              </div>
+                            )}
                           </td>
                         );
                       })}
