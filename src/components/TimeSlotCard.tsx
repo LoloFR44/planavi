@@ -17,6 +17,7 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
   const spotsLeft = slot.capacity > 0 ? slot.capacity - totalVisitors : null;
   const hasBookings = bookings.length > 0;
 
+  const [showCancelList, setShowCancelList] = useState(false);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [cancelName, setCancelName] = useState('');
   const [cancelError, setCancelError] = useState('');
@@ -42,6 +43,7 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
     try {
       await deleteBooking(cancelId);
       setCancelId(null);
+      setShowCancelList(false);
     } catch {
       setCancelError('Erreur lors de l\'annulation.');
     } finally {
@@ -83,18 +85,44 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
 
       {/* Visitors */}
       {bookings.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-1.5">
-          {bookings.map((b) => (
+        <div className="mb-1.5">
+          <div className="flex flex-wrap gap-1 mb-1">
+            {bookings.map((b) => (
+              <span
+                key={b.id}
+                className="inline-block bg-[#1e3a8a]/5 text-[#1e3a8a] text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+              >
+                {b.visitorFirstName} {b.visitorLastName.charAt(0)}.
+                {b.visitorCount > 1 && ` +${b.visitorCount - 1}`}
+              </span>
+            ))}
+          </div>
+          {!cancelId && (
             <button
-              key={b.id}
-              onClick={() => handleCancelClick(b.id)}
-              className="inline-block bg-[#1e3a8a]/5 text-[#1e3a8a] text-[10px] px-1.5 py-0.5 rounded-full font-medium hover:bg-red-50 hover:text-red-600 cursor-pointer"
-              title="Cliquer pour annuler cette réservation"
+              onClick={() => setShowCancelList(!showCancelList)}
+              className="text-[10px] text-red-400 hover:text-red-600 font-medium flex items-center gap-0.5"
             >
-              {b.visitorFirstName} {b.visitorLastName.charAt(0)}.
-              {b.visitorCount > 1 && ` +${b.visitorCount - 1}`}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Annuler une réservation
             </button>
-          ))}
+          )}
+          {showCancelList && !cancelId && (
+            <div className="mt-1 space-y-0.5">
+              <p className="text-[10px] text-gray-400">Quelle réservation annuler ?</p>
+              {bookings.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => { handleCancelClick(b.id); setShowCancelList(false); }}
+                  className="block w-full text-left text-[11px] px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 font-medium"
+                >
+                  {b.visitorFirstName} {b.visitorLastName.charAt(0)}.
+                  {b.visitorCount > 1 && ` (+${b.visitorCount - 1} pers.)`}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -121,7 +149,7 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
               {cancelling ? '...' : 'Annuler'}
             </button>
             <button
-              onClick={() => setCancelId(null)}
+              onClick={() => { setCancelId(null); setShowCancelList(false); }}
               className="px-2 py-1 text-[10px] text-gray-500 border border-gray-200 rounded hover:bg-gray-50"
             >
               Non
