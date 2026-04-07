@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import type { TimeSlot, Booking } from '@/types';
+import type { TimeSlot, Booking, BookingFormData } from '@/types';
 
 interface WeeklyCalendarGridProps {
   timeSlots: TimeSlot[];
@@ -9,6 +9,7 @@ interface WeeklyCalendarGridProps {
   onToggleSlot: (slotId: string, currentStatus: string) => void;
   onDeleteSlot: (slotId: string) => void;
   onBulkDelete: (slotIds: string[]) => void;
+  onAddBooking?: (data: BookingFormData) => Promise<void>;
 }
 
 const DAY_LABELS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
@@ -43,10 +44,17 @@ export default function WeeklyCalendarGrid({
   onToggleSlot,
   onDeleteSlot,
   onBulkDelete,
+  onAddBooking,
 }: WeeklyCalendarGridProps) {
   const [weekStart, setWeekStart] = useState<Date>(() => getMonday(new Date()));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const prevSlotCount = useRef(timeSlots.length);
+
+  // Quick-add booking state
+  const [addingToSlot, setAddingToSlot] = useState<string | null>(null);
+  const [addForm, setAddForm] = useState({ firstName: '', lastName: '', count: 1 });
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState('');
 
   // Auto-navigate to the week of the newest slot when slots are added
   useEffect(() => {
@@ -225,6 +233,34 @@ export default function WeeklyCalendarGrid({
     }
     if (ids.length === 0) return;
     onBulkDelete(ids);
+  };
+
+  const handleQuickAdd = async (slot: TimeSlot) => {
+    if (!onAddBooking || !addForm.firstName.trim() || !addForm.lastName.trim()) {
+      setAddError('Prénom et nom requis.');
+      return;
+    }
+    setAddLoading(true);
+    setAddError('');
+    try {
+      await onAddBooking({
+        planningId: slot.planningId,
+        timeSlotId: slot.id,
+        visitorFirstName: addForm.firstName.trim(),
+        visitorLastName: addForm.lastName.trim(),
+        visitorCount: addForm.count,
+        visitorRelation: '',
+        visitorPhone: '',
+        visitorEmail: '',
+        comment: 'Ajouté par le gestionnaire',
+      });
+      setAddingToSlot(null);
+      setAddForm({ firstName: '', lastName: '', count: 1 });
+    } catch {
+      setAddError('Erreur lors de l\'ajout.');
+    } finally {
+      setAddLoading(false);
+    }
   };
 
   const hasSlots = timeRanges.length > 0;
@@ -422,39 +458,88 @@ export default function WeeklyCalendarGrid({
                                 {slot.status === 'available' ? 'Ouvert' : 'Fermé'}
                               </button>
                             </div>
-                            <div className={`inline-flex flex-col items-center rounded-lg px-2 py-1 mt-0.5 ${
-                              isClosed
-                                ? 'bg-gray-100 text-gray-400'
-                                : isFull
-                                  ? 'bg-orange-50 text-orange-600'
-                                  : count > 0
-                                    ? 'bg-[#1e3a8a]/10 text-[#1e3a8a]'
-                                    : 'bg-[#3db54a]/10 text-[#3db54a]'
-                            }`}>
-                              <span className="text-xs font-bold">
-                                {count}{slot.capacity > 0 ? `/${slot.capacity}` : ''}
-                              </span>
-                              <span className="text-[10px]">
-                                visiteur{count !== 1 ? 's' : ''}
-                              </span>
-                            </div>
-                            {/* Tooltip with visitor names on hover */}
-                            {slotBookings.length > 0 && (
-                              <div className="absolute z-20 bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block pointer-events-none">
-                                <div className="bg-gray-900 text-white text-[11px] rounded-lg px-3 py-2 shadow-lg whitespace-nowrap">
-                                  {slotBookings.map((b) => (
-                                    <div key={b.id} className="flex items-center gap-1.5 py-0.5">
-                                      <span className="font-medium">{b.visitorFirstName} {b.visitorLastName}</span>
-                                      {b.visitorCount > 1 && (
-                                        <span className="text-gray-400">(+{b.visitorCount - 1})</span>
-                                      )}
-                                      {b.visitorRelation && (
-                                        <span className="text-gray-400">— {b.visitorRelation}</span>
-                                      )}
-                                    </div>
-                                  ))}
+                            {slotBookings.length > 0 ? (
+                              <div className="mt-0.5 space-y-0.5">
+                                {slotBookings.map((b) => (
+                                  <div
+                                    key={b.id}
+                                    className={`text-[10px] font-medium rounded px-1.5 py-0.5 ${
+                                      isClosed
+                                        ? 'bg-gray-100 text-gray-400'
+                                        : 'bg-[#1e3a8a]/10 text-[#1e3a8a]'
+                                    }`}
+                                    title={`${b.visitorFirstName} ${b.visitorLastName}${b.visitorRelation ? ` — ${b.visitorRelation}` : ''}${b.visitorCount > 1 ? ` (${b.visitorCount} pers.)` : ''}`}
+                                  >
+                                    {b.visitorFirstName} {b.visitorLastName.charAt(0)}.
+                                    {b.visitorCount > 1 && ` +${b.visitorCount - 1}`}
+                                  </div>
+                                ))}
+                                {slot.capacity > 0 && (
+                                  <div className={`text-[9px] font-medium ${isFull ? 'text-orange-500' : 'text-gray-400'}`}>
+                                    {isFull ? 'Complet' : `${slot.capacity - count} place${slot.capacity - count > 1 ? 's' : ''}`}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className={`inline-flex flex-col items-center rounded-lg px-2 py-1 mt-0.5 ${
+                                isClosed
+                                  ? 'bg-gray-100 text-gray-400'
+                                  : 'bg-[#3db54a]/10 text-[#3db54a]'
+                              }`}>
+                                <span className="text-[10px]">
+                                  {isClosed ? 'Fermé' : slot.capacity > 0 ? `${slot.capacity} place${slot.capacity > 1 ? 's' : ''}` : 'Disponible'}
+                                </span>
+                              </div>
+                            )}
+                            {/* Quick-add visitor button */}
+                            {onAddBooking && !isClosed && !isFull && addingToSlot !== slot.id && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setAddingToSlot(slot.id); setAddForm({ firstName: '', lastName: '', count: 1 }); setAddError(''); }}
+                                className="mt-1 text-[9px] text-[#3db54a] hover:text-[#3db54a]/80 font-medium flex items-center gap-0.5 mx-auto"
+                                title="Ajouter un visiteur manuellement"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Ajouter
+                              </button>
+                            )}
+                            {/* Quick-add inline form */}
+                            {addingToSlot === slot.id && (
+                              <div className="mt-1 bg-white border border-[#1e3a8a]/20 rounded-lg p-1.5 shadow-sm" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  placeholder="Prénom"
+                                  value={addForm.firstName}
+                                  onChange={(e) => setAddForm({ ...addForm, firstName: e.target.value })}
+                                  className="w-full px-1.5 py-1 border border-gray-200 rounded text-[10px] mb-1 focus:outline-none focus:ring-1 focus:ring-[#1e3a8a]"
+                                  autoFocus
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Nom"
+                                  value={addForm.lastName}
+                                  onChange={(e) => setAddForm({ ...addForm, lastName: e.target.value })}
+                                  onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd(slot)}
+                                  className="w-full px-1.5 py-1 border border-gray-200 rounded text-[10px] mb-1 focus:outline-none focus:ring-1 focus:ring-[#1e3a8a]"
+                                />
+                                {addError && <p className="text-[9px] text-red-500 mb-1">{addError}</p>}
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => handleQuickAdd(slot)}
+                                    disabled={addLoading}
+                                    className="flex-1 py-1 text-[9px] font-semibold text-white rounded hover:shadow-sm disabled:opacity-50"
+                                    style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
+                                  >
+                                    {addLoading ? '...' : 'OK'}
+                                  </button>
+                                  <button
+                                    onClick={() => setAddingToSlot(null)}
+                                    className="px-2 py-1 text-[9px] text-gray-400 border border-gray-200 rounded hover:bg-gray-50"
+                                  >
+                                    X
+                                  </button>
                                 </div>
-                                <div className="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1" />
                               </div>
                             )}
                           </td>

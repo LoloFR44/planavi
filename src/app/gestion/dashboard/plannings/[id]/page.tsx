@@ -6,7 +6,7 @@ import { getPlanningById, updatePlanning } from '@/services/plannings';
 import { useTimeSlots } from '@/hooks/useTimeSlots';
 import { useBookings } from '@/hooks/useBookings';
 import { updateTimeSlot, deleteTimeSlot, bulkDeleteTimeSlots } from '@/services/timeSlots';
-import { deleteBooking } from '@/services/bookings';
+import { createBooking, deleteBooking } from '@/services/bookings';
 import { deleteMessage } from '@/services/messages';
 import { useMessages } from '@/hooks/useMessages';
 import TimeSlotForm from '@/components/admin/TimeSlotForm';
@@ -16,7 +16,7 @@ import MessageWall from '@/components/MessageWall';
 import ToastMessage from '@/components/ui/ToastMessage';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import QRCodeShare from '@/components/QRCodeShare';
-import type { Planning } from '@/types';
+import type { Planning, BookingFormData } from '@/types';
 
 export default function ManagePlanningPage({
   params,
@@ -82,6 +82,11 @@ export default function ManagePlanningPage({
     setToast({ type: 'success', message: 'Réservation supprimée' });
   };
 
+  const handleAddBooking = async (data: BookingFormData) => {
+    await createBooking(data);
+    setToast({ type: 'success', message: 'Visiteur ajouté !' });
+  };
+
   const handleSaveMessage = async () => {
     if (!planning) return;
     await updatePlanning(planning.id, { adminMessage });
@@ -144,7 +149,7 @@ export default function ManagePlanningPage({
           <div className="flex-1">
             <h2 className="text-base font-bold text-[#1e3a8a] mb-1">Partagez ce lien à vos proches</h2>
             <p className="text-sm text-gray-600 mb-3">
-              Envoyez ce lien par SMS, email ou WhatsApp à votre famille pour qu&apos;ils puissent réserver une visite.
+              Envoyez ce lien par SMS, email ou WhatsApp à vos proches (famille, amis) pour qu&apos;ils puissent réserver une visite.
             </p>
             <div className="flex gap-2 mb-3">
               <input
@@ -266,6 +271,7 @@ export default function ManagePlanningPage({
               onToggleSlot={handleToggleSlot}
               onDeleteSlot={handleDeleteSlot}
               onBulkDelete={handleBulkDeleteSlots}
+              onAddBooking={handleAddBooking}
             />
           </div>
         </div>
