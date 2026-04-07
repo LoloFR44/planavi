@@ -12,18 +12,6 @@ interface BookingModalProps {
   onSuccess: () => void;
 }
 
-const RELATIONS = [
-  { value: '', label: 'Sélectionner (optionnel)' },
-  { value: 'fils', label: 'Fils / Fille' },
-  { value: 'conjoint', label: 'Conjoint(e)' },
-  { value: 'petit-enfant', label: 'Petit-enfant' },
-  { value: 'frere-soeur', label: 'Frère / Soeur' },
-  { value: 'ami', label: 'Ami(e)' },
-  { value: 'voisin', label: 'Voisin(e)' },
-  { value: 'aidant', label: 'Aidant(e)' },
-  { value: 'autre', label: 'Autre' },
-];
-
 export default function BookingModal({ slot, planning, onClose, onSuccess }: BookingModalProps) {
   const [form, setForm] = useState({
     visitorFirstName: '',
@@ -31,7 +19,6 @@ export default function BookingModal({ slot, planning, onClose, onSuccess }: Boo
     visitorPhone: '',
     visitorEmail: '',
     visitorCount: 1,
-    visitorRelation: '',
     comment: '',
   });
   const [loading, setLoading] = useState(false);
@@ -57,7 +44,7 @@ export default function BookingModal({ slot, planning, onClose, onSuccess }: Boo
         visitorPhone: form.visitorPhone.trim() || '',
         visitorEmail: form.visitorEmail.trim() || '',
         visitorCount: form.visitorCount,
-        visitorRelation: form.visitorRelation || '',
+        visitorRelation: '',
         comment: form.comment.trim() || '',
       });
 
@@ -72,7 +59,7 @@ export default function BookingModal({ slot, planning, onClose, onSuccess }: Boo
             planningTitle: planning.title,
             visitorFirstName: form.visitorFirstName.trim(),
             visitorLastName: form.visitorLastName.trim(),
-            visitorRelation: form.visitorRelation || '',
+            visitorRelation: '',
             visitorCount: form.visitorCount,
             date: slot.date,
             startTime: slot.startTime,
@@ -205,19 +192,6 @@ export default function BookingModal({ slot, planning, onClose, onSuccess }: Boo
                 required
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lien avec la personne</label>
-            <select
-              value={form.visitorRelation}
-              onChange={(e) => setForm({ ...form, visitorRelation: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-            >
-              {RELATIONS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

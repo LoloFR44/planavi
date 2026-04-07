@@ -426,9 +426,6 @@ export default function WeeklyCalendarGrid({
                         const isFull = slot.capacity > 0 && count >= slot.capacity;
                         const isSelected = selected.has(slot.id);
                         const slotBookings = bookingNamesBySlot[slot.id] || [];
-                        const tooltipText = slotBookings.length > 0
-                          ? slotBookings.map((b) => `${b.visitorFirstName} ${b.visitorLastName}${b.visitorCount > 1 ? ` (+${b.visitorCount - 1})` : ''}${b.visitorRelation ? ` — ${b.visitorRelation}` : ''}`).join('\n')
-                          : '';
 
                         return (
                           <td
@@ -468,7 +465,7 @@ export default function WeeklyCalendarGrid({
                                         ? 'bg-gray-100 text-gray-400'
                                         : 'bg-[#1e3a8a]/10 text-[#1e3a8a]'
                                     }`}
-                                    title={`${b.visitorFirstName} ${b.visitorLastName}${b.visitorRelation ? ` — ${b.visitorRelation}` : ''}${b.visitorCount > 1 ? ` (${b.visitorCount} pers.)` : ''}`}
+                                    title={`${b.visitorFirstName} ${b.visitorLastName}${b.visitorCount > 1 ? ` (${b.visitorCount} pers.)` : ''}`}
                                   >
                                     {b.visitorFirstName} {b.visitorLastName.charAt(0)}.
                                     {b.visitorCount > 1 && ` +${b.visitorCount - 1}`}
