@@ -86,7 +86,7 @@ function buildConfirmationHtml(data: ConfirmationPayload): string {
       </div>
 
       <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;text-align:center;">
-        Pour annuler, rendez-vous sur le planning et cliquez sur votre nom.
+        Pour annuler, rendez-vous sur le planning et cliquez sur &laquo;&nbsp;Annuler une r\u00e9servation&nbsp;&raquo; sous le cr\u00e9neau concern\u00e9.
       </p>
     </div>
 
