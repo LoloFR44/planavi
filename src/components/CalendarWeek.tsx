@@ -34,6 +34,11 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
+function timeToMin(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
 const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MONTH_NAMES = [
   'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
@@ -73,31 +78,35 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
     return map;
   }, [bookings]);
 
-  // Collect unique time ranges for this week and sort them
-  const timeRanges = useMemo(() => {
-    const dateKeys = days.map(formatDateKey);
-    const rangeSet = new Set<string>();
-    for (const key of dateKeys) {
-      for (const slot of slotsByDate[key] || []) {
-        rangeSet.add(`${slot.startTime}-${slot.endTime}`);
-      }
-    }
-    return Array.from(rangeSet).sort();
-  }, [days, slotsByDate]);
+  // Compute AM/PM time ranges for the timeline layout
+  const PX_PER_MIN = 2;
+  const { amRange, pmRange } = useMemo(() => {
+    let amMin = 1440, amMax = 0, pmMin = 1440, pmMax = 0;
+    let hasAm = false, hasPm = false;
 
-  // Build a lookup: date -> timeRange -> slot
-  const slotGrid = useMemo(() => {
-    const grid: Record<string, Record<string, TimeSlot>> = {};
     for (const day of days) {
       const key = formatDateKey(day);
-      grid[key] = {};
+      if (key < today) continue;
       for (const slot of slotsByDate[key] || []) {
-        const range = `${slot.startTime}-${slot.endTime}`;
-        grid[key][range] = slot;
+        const start = timeToMin(slot.startTime);
+        const end = timeToMin(slot.endTime);
+        if (start < 780) { // before 13:00
+          hasAm = true;
+          amMin = Math.min(amMin, start);
+          amMax = Math.max(amMax, end);
+        } else {
+          hasPm = true;
+          pmMin = Math.min(pmMin, start);
+          pmMax = Math.max(pmMax, end);
+        }
       }
     }
-    return grid;
-  }, [days, slotsByDate]);
+
+    return {
+      amRange: hasAm ? { min: Math.floor(amMin / 60) * 60, max: Math.ceil(amMax / 60) * 60 } : null,
+      pmRange: hasPm ? { min: Math.floor(pmMin / 60) * 60, max: Math.ceil(pmMax / 60) * 60 } : null,
+    };
+  }, [days, slotsByDate, today]);
 
   // Determine which days to show (filter old past days)
   const visibleDays = useMemo(() => {
@@ -148,8 +157,6 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
     return `${MONTH_NAMES[first.getMonth()]} – ${MONTH_NAMES[last.getMonth()]} ${last.getFullYear()}`;
   })();
 
-  const fmtTime = (t: string) => t.replace(':', 'h');
-
   return (
     <div>
       {/* Week navigation */}
@@ -190,80 +197,114 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
         </div>
       </div>
 
-      {/* Desktop: aligned grid (lg+) */}
+      {/* Desktop: timeline layout (lg+) */}
       <div className="hidden lg:block">
-        <table className="w-full border-collapse">
-          {/* Day headers */}
-          <thead>
-            <tr>
-              <th className="w-20 p-1" />
-              {days.map((day, i) => {
-                const key = formatDateKey(day);
-                const isToday = key === today;
-                const isPast = key < today;
-                return (
-                  <th key={key} className="p-1 text-center">
-                    <div className={`rounded-lg px-1 py-1.5 ${
-                      isToday
-                        ? 'bg-gradient-to-b from-[#1e3a8a]/10 to-[#1e3a8a]/5'
-                        : ''
-                    }`}>
-                      <p className={`text-[10px] font-bold uppercase tracking-wider leading-tight ${
-                        isToday ? 'text-[#1e3a8a]' : isPast ? 'text-gray-300' : 'text-gray-400'
-                      }`}>{DAY_NAMES[i]}</p>
-                      <p className={`text-base font-bold leading-tight ${
-                        isToday ? 'text-[#1e3a8a]' : isPast ? 'text-gray-300' : 'text-gray-800'
-                      }`}>{day.getDate()}</p>
+        {/* Day headers */}
+        <div className="grid grid-cols-[56px_repeat(7,1fr)] gap-1 mb-1">
+          <div />
+          {days.map((day, i) => {
+            const key = formatDateKey(day);
+            const isToday = key === today;
+            const isPast = key < today;
+            return (
+              <div key={key} className={`text-center rounded-lg px-1 py-1.5 ${
+                isToday ? 'bg-gradient-to-b from-[#1e3a8a]/10 to-[#1e3a8a]/5' : ''
+              }`}>
+                <p className={`text-[10px] font-bold uppercase tracking-wider leading-tight ${
+                  isToday ? 'text-[#1e3a8a]' : isPast ? 'text-gray-300' : 'text-gray-400'
+                }`}>{DAY_NAMES[i]}</p>
+                <p className={`text-base font-bold leading-tight ${
+                  isToday ? 'text-[#1e3a8a]' : isPast ? 'text-gray-300' : 'text-gray-800'
+                }`}>{day.getDate()}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Timeline periods: Matin + Après-midi */}
+        {([
+          { key: 'am', label: 'Matin', range: amRange, filter: (s: TimeSlot) => timeToMin(s.startTime) < 780 },
+          { key: 'pm', label: 'Après-midi', range: pmRange, filter: (s: TimeSlot) => timeToMin(s.startTime) >= 780 },
+        ] as const).map(({ key: periodKey, label, range, filter: filterFn }) => {
+          if (!range) return null;
+          const totalHeight = (range.max - range.min) * PX_PER_MIN;
+          // Hour markers within this period
+          const hourMarks: number[] = [];
+          for (let m = range.min; m <= range.max; m += 60) {
+            hourMarks.push(m);
+          }
+
+          return (
+            <div key={periodKey} className="mb-4">
+              {/* Period label */}
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+              {/* Timeline grid */}
+              <div className="grid grid-cols-[56px_repeat(7,1fr)] gap-1">
+                {/* Hour labels column */}
+                <div className="relative" style={{ height: totalHeight + 90 }}>
+                  {hourMarks.map((m) => (
+                    <div
+                      key={m}
+                      className="absolute right-1 text-[10px] text-gray-300 font-medium leading-none"
+                      style={{ top: (m - range.min) * PX_PER_MIN - 5 }}
+                    >
+                      {`${Math.floor(m / 60)}h`}
                     </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {timeRanges.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="text-center py-6">
-                  <p className="text-sm text-gray-300">Aucun créneau cette semaine</p>
-                </td>
-              </tr>
-            ) : (
-              timeRanges.map((range) => {
-                const [startTime, endTime] = range.split('-');
-                return (
-                  <tr key={range} className="align-top">
-                    {/* Time label */}
-                    <td className="p-1 text-right align-top pt-3">
-                      <p className="text-xs font-bold text-gray-500 leading-tight">{fmtTime(startTime)}</p>
-                      <p className="text-[10px] text-gray-300 leading-tight">{fmtTime(endTime)}</p>
-                    </td>
-                    {/* Slot cells */}
-                    {days.map((day) => {
-                      const key = formatDateKey(day);
-                      const isPast = key < today;
-                      const slot = slotGrid[key]?.[range];
-                      return (
-                        <td key={key} className="p-0.5 align-top">
-                          {isPast ? (
-                            <div className="h-full min-h-[40px] rounded-lg bg-gray-50/30 opacity-30" />
-                          ) : slot ? (
-                            <TimeSlotCard
-                              slot={slot}
-                              bookings={bookingsBySlot[slot.id] || []}
-                              onBook={setSelectedSlot}
-                            />
-                          ) : (
-                            <div className="min-h-[40px]" />
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                  ))}
+                </div>
+                {/* Day columns */}
+                {days.map((day) => {
+                  const dateKey = formatDateKey(day);
+                  const isPast = dateKey < today;
+                  const daySlots = (slotsByDate[dateKey] || [])
+                    .filter(filterFn)
+                    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+                  return (
+                    <div
+                      key={dateKey}
+                      className="relative min-w-0"
+                      style={{ height: totalHeight + 90 }}
+                    >
+                      {/* Faint hour grid lines */}
+                      {hourMarks.map((m) => (
+                        <div
+                          key={m}
+                          className="absolute left-0 right-0 border-t border-gray-100/60"
+                          style={{ top: (m - range.min) * PX_PER_MIN }}
+                        />
+                      ))}
+                      {/* Slots */}
+                      {isPast ? (
+                        <div className="absolute inset-0 rounded-lg bg-gray-50/30 opacity-30" />
+                      ) : (
+                        daySlots.map((slot) => {
+                          const top = (timeToMin(slot.startTime) - range.min) * PX_PER_MIN;
+                          return (
+                            <div
+                              key={slot.id}
+                              className="absolute left-0 right-0 z-10"
+                              style={{ top }}
+                            >
+                              <TimeSlotCard
+                                slot={slot}
+                                bookings={bookingsBySlot[slot.id] || []}
+                                onBook={setSelectedSlot}
+                              />
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Mobile: stacked cards (sm, md) */}

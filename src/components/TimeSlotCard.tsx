@@ -17,6 +17,15 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
   const spotsLeft = slot.capacity > 0 ? slot.capacity - totalVisitors : null;
   const hasBookings = bookings.length > 0;
 
+  // Detect appointment-type slots (Kiné, etc.) — all bookings are from a known practitioner
+  const isAppointment = hasBookings && bookings.every(
+    (b) => ['kiné', 'kine', 'kinésithérapeute', 'infirmier', 'infirmière', 'médecin', 'docteur', 'aide-soignant', 'aide-soignante', 'orthophoniste', 'ergothérapeute']
+      .includes(b.visitorFirstName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim())
+      || b.visitorFirstName.toLowerCase().startsWith('kiné')
+      || b.visitorFirstName.toLowerCase().startsWith('kine')
+  );
+  const appointmentLabel = isAppointment && bookings.length > 0 ? bookings[0].visitorFirstName : '';
+
   const [showCancelList, setShowCancelList] = useState(false);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [cancelName, setCancelName] = useState('');
@@ -51,6 +60,32 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
     }
   };
 
+  // --- Appointment card (Kiné, etc.) ---
+  if (isAppointment) {
+    return (
+      <div className="rounded-lg border-2 border-[#7c3aed]/20 bg-[#7c3aed]/5 p-2.5 text-sm">
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-bold text-gray-800 text-xs">
+            {slot.startTime.replace(':', 'h')} – {slot.endTime.replace(':', 'h')}
+          </span>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#7c3aed]/10 text-[#7c3aed]">
+            Rendez-vous
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 py-1">
+          <svg className="w-4 h-4 text-[#7c3aed] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+          <span className="font-semibold text-[#7c3aed] text-xs">{appointmentLabel}</span>
+        </div>
+        {slot.publicNote && (
+          <p className="text-[10px] text-gray-400 italic leading-tight">{slot.publicNote}</p>
+        )}
+      </div>
+    );
+  }
+
+  // --- Regular visitor card ---
   return (
     <div
       className={`rounded-lg border p-2.5 text-sm ${
@@ -92,7 +127,7 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
                 key={b.id}
                 className="inline-block bg-[#1e3a8a]/5 text-[#1e3a8a] text-[10px] px-1.5 py-0.5 rounded-full font-medium"
               >
-                {b.visitorFirstName} {b.visitorLastName.charAt(0)}.
+                {b.visitorFirstName.charAt(0)}. {b.visitorLastName}
                 {b.visitorCount > 1 && ` +${b.visitorCount - 1}`}
               </span>
             ))}
@@ -117,7 +152,7 @@ export default function TimeSlotCard({ slot, bookings, onBook }: TimeSlotCardPro
                   onClick={() => { handleCancelClick(b.id); setShowCancelList(false); }}
                   className="block w-full text-left text-[11px] px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 font-medium"
                 >
-                  {b.visitorFirstName} {b.visitorLastName.charAt(0)}.
+                  {b.visitorFirstName.charAt(0)}. {b.visitorLastName}
                   {b.visitorCount > 1 && ` (+${b.visitorCount - 1} pers.)`}
                 </button>
               ))}

@@ -467,7 +467,7 @@ export default function WeeklyCalendarGrid({
                                     }`}
                                     title={`${b.visitorFirstName} ${b.visitorLastName}${b.visitorCount > 1 ? ` (${b.visitorCount} pers.)` : ''}`}
                                   >
-                                    {b.visitorFirstName} {b.visitorLastName.charAt(0)}.
+                                    {b.visitorFirstName.charAt(0)}. {b.visitorLastName}
                                     {b.visitorCount > 1 && ` +${b.visitorCount - 1}`}
                                   </div>
                                 ))}
