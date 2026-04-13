@@ -78,33 +78,34 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
     return map;
   }, [bookings]);
 
-  // Compute AM/PM time ranges for the timeline layout
-  const PX_PER_MIN = 2;
-  const { amRange, pmRange } = useMemo(() => {
-    let amMin = 1440, amMax = 0, pmMin = 1440, pmMax = 0;
-    let hasAm = false, hasPm = false;
+  // Compute AM/PM slot rows — compact layout based on unique start times
+  const ROW_GAP = 6; // px gap between rows
+
+  const { amRows, pmRows, hasAm, hasPm } = useMemo(() => {
+    const amStartTimes = new Set<string>();
+    const pmStartTimes = new Set<string>();
 
     for (const day of days) {
       const key = formatDateKey(day);
       if (key < today) continue;
       for (const slot of slotsByDate[key] || []) {
         const start = timeToMin(slot.startTime);
-        const end = timeToMin(slot.endTime);
-        if (start < 780) { // before 13:00
-          hasAm = true;
-          amMin = Math.min(amMin, start);
-          amMax = Math.max(amMax, end);
+        if (start < 780) {
+          amStartTimes.add(slot.startTime);
         } else {
-          hasPm = true;
-          pmMin = Math.min(pmMin, start);
-          pmMax = Math.max(pmMax, end);
+          pmStartTimes.add(slot.startTime);
         }
       }
     }
 
+    const sortTimes = (times: Set<string>) =>
+      Array.from(times).sort((a, b) => timeToMin(a) - timeToMin(b));
+
     return {
-      amRange: hasAm ? { min: Math.floor(amMin / 60) * 60, max: Math.ceil(amMax / 60) * 60 } : null,
-      pmRange: hasPm ? { min: Math.floor(pmMin / 60) * 60, max: Math.ceil(pmMax / 60) * 60 } : null,
+      amRows: sortTimes(amStartTimes),
+      pmRows: sortTimes(pmStartTimes),
+      hasAm: amStartTimes.size > 0,
+      hasPm: pmStartTimes.size > 0,
     };
   }, [days, slotsByDate, today]);
 
@@ -200,8 +201,7 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
       {/* Desktop: timeline layout (lg+) */}
       <div className="hidden lg:block">
         {/* Day headers */}
-        <div className="grid grid-cols-[56px_repeat(7,1fr)] gap-1 mb-1">
-          <div />
+        <div className="grid grid-cols-[repeat(7,1fr)] gap-1 mb-1">
           {days.map((day, i) => {
             const key = formatDateKey(day);
             const isToday = key === today;
@@ -221,18 +221,12 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
           })}
         </div>
 
-        {/* Timeline periods: Matin + Après-midi */}
+        {/* Compact periods: Matin + Après-midi */}
         {([
-          { key: 'am', label: 'Matin', range: amRange, filter: (s: TimeSlot) => timeToMin(s.startTime) < 780 },
-          { key: 'pm', label: 'Après-midi', range: pmRange, filter: (s: TimeSlot) => timeToMin(s.startTime) >= 780 },
-        ] as const).map(({ key: periodKey, label, range, filter: filterFn }) => {
-          if (!range) return null;
-          const totalHeight = (range.max - range.min) * PX_PER_MIN;
-          // Hour markers within this period
-          const hourMarks: number[] = [];
-          for (let m = range.min; m <= range.max; m += 60) {
-            hourMarks.push(m);
-          }
+          { key: 'am', label: 'Matin', rows: amRows, has: hasAm, filter: (s: TimeSlot) => timeToMin(s.startTime) < 780 },
+          { key: 'pm', label: 'Après-midi', rows: pmRows, has: hasPm, filter: (s: TimeSlot) => timeToMin(s.startTime) >= 780 },
+        ] as const).map(({ key: periodKey, label, rows, has, filter: filterFn }) => {
+          if (!has) return null;
 
           return (
             <div key={periodKey} className="mb-4">
@@ -241,66 +235,36 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</span>
                 <div className="flex-1 h-px bg-gray-100" />
               </div>
-              {/* Timeline grid */}
-              <div className="grid grid-cols-[56px_repeat(7,1fr)] gap-1">
-                {/* Hour labels column */}
-                <div className="relative" style={{ height: totalHeight + 90 }}>
-                  {hourMarks.map((m) => (
-                    <div
-                      key={m}
-                      className="absolute right-1 text-[10px] text-gray-300 font-medium leading-none"
-                      style={{ top: (m - range.min) * PX_PER_MIN - 5 }}
-                    >
-                      {`${Math.floor(m / 60)}h`}
-                    </div>
-                  ))}
-                </div>
-                {/* Day columns */}
-                {days.map((day) => {
-                  const dateKey = formatDateKey(day);
-                  const isPast = dateKey < today;
-                  const daySlots = (slotsByDate[dateKey] || [])
-                    .filter(filterFn)
-                    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+              {/* Compact rows — one row per unique start time */}
+              <div className="flex flex-col" style={{ gap: ROW_GAP }}>
+                {rows.map((startTime) => (
+                  <div key={startTime} className="grid grid-cols-[repeat(7,1fr)] gap-1">
+                    {days.map((day) => {
+                      const dateKey = formatDateKey(day);
+                      const isPast = dateKey < today;
+                      // Find slots for this day that match this start time
+                      const daySlots = (slotsByDate[dateKey] || [])
+                        .filter((s) => filterFn(s) && s.startTime === startTime);
 
-                  return (
-                    <div
-                      key={dateKey}
-                      className="relative min-w-0"
-                      style={{ height: totalHeight + 90 }}
-                    >
-                      {/* Faint hour grid lines */}
-                      {hourMarks.map((m) => (
-                        <div
-                          key={m}
-                          className="absolute left-0 right-0 border-t border-gray-100/60"
-                          style={{ top: (m - range.min) * PX_PER_MIN }}
-                        />
-                      ))}
-                      {/* Slots */}
-                      {isPast ? (
-                        <div className="absolute inset-0 rounded-lg bg-gray-50/30 opacity-30" />
-                      ) : (
-                        daySlots.map((slot) => {
-                          const top = (timeToMin(slot.startTime) - range.min) * PX_PER_MIN;
-                          return (
-                            <div
-                              key={slot.id}
-                              className="absolute left-0 right-0 z-10"
-                              style={{ top }}
-                            >
+                      return (
+                        <div key={dateKey} className="min-w-0">
+                          {isPast ? (
+                            <div className="h-4" />
+                          ) : daySlots.length > 0 ? (
+                            daySlots.map((slot) => (
                               <TimeSlotCard
+                                key={slot.id}
                                 slot={slot}
                                 bookings={bookingsBySlot[slot.id] || []}
                                 onBook={setSelectedSlot}
                               />
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  );
-                })}
+                            ))
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </div>
           );
