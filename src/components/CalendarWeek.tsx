@@ -235,36 +235,51 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</span>
                 <div className="flex-1 h-px bg-gray-100" />
               </div>
-              {/* Compact rows — one row per unique start time */}
-              <div className="flex flex-col" style={{ gap: ROW_GAP }}>
-                {rows.map((startTime) => (
-                  <div key={startTime} className="grid grid-cols-[repeat(7,1fr)] gap-1">
-                    {days.map((day) => {
-                      const dateKey = formatDateKey(day);
-                      const isPast = dateKey < today;
-                      // Find slots for this day that match this start time
-                      const daySlots = (slotsByDate[dateKey] || [])
-                        .filter((s) => filterFn(s) && s.startTime === startTime);
+              {/* Compact rows with quinconce (stagger) effect */}
+              <div className="flex flex-col">
+                {rows.map((startTime, rowIdx) => {
+                  // Compute negative margin for close start times (quinconce)
+                  let marginTop = rowIdx === 0 ? 0 : ROW_GAP;
+                  if (rowIdx > 0) {
+                    const gap = timeToMin(startTime) - timeToMin(rows[rowIdx - 1]);
+                    // For gaps under 90 min, overlap proportionally
+                    if (gap < 90) {
+                      marginTop = -Math.round(Math.max(20, (90 - gap) * 1.2));
+                    }
+                  }
 
-                      return (
-                        <div key={dateKey} className="min-w-0">
-                          {isPast ? (
-                            <div className="h-4" />
-                          ) : daySlots.length > 0 ? (
-                            daySlots.map((slot) => (
-                              <TimeSlotCard
-                                key={slot.id}
-                                slot={slot}
-                                bookings={bookingsBySlot[slot.id] || []}
-                                onBook={setSelectedSlot}
-                              />
-                            ))
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                  return (
+                    <div
+                      key={startTime}
+                      className="grid grid-cols-[repeat(7,1fr)] gap-1"
+                      style={{ marginTop, position: 'relative', zIndex: rowIdx + 1 }}
+                    >
+                      {days.map((day) => {
+                        const dateKey = formatDateKey(day);
+                        const isPast = dateKey < today;
+                        const daySlots = (slotsByDate[dateKey] || [])
+                          .filter((s) => filterFn(s) && s.startTime === startTime);
+
+                        return (
+                          <div key={dateKey} className="min-w-0">
+                            {isPast ? (
+                              <div className="h-4" />
+                            ) : daySlots.length > 0 ? (
+                              daySlots.map((slot) => (
+                                <TimeSlotCard
+                                  key={slot.id}
+                                  slot={slot}
+                                  bookings={bookingsBySlot[slot.id] || []}
+                                  onBook={setSelectedSlot}
+                                />
+                              ))
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
