@@ -229,7 +229,7 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
           if (!has) return null;
 
           return (
-            <div key={periodKey} className="mb-4">
+            <div key={periodKey} className="mb-2">
               {/* Period label */}
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</span>
