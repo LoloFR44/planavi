@@ -235,24 +235,22 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</span>
                 <div className="flex-1 h-px bg-gray-100" />
               </div>
-              {/* Compact rows with quinconce (stagger) effect */}
+              {/* Compact rows with proportional spacing (quinconce) */}
               <div className="flex flex-col">
                 {rows.map((startTime, rowIdx) => {
-                  // Compute negative margin for close start times (quinconce)
-                  let marginTop = rowIdx === 0 ? 0 : ROW_GAP;
+                  // Proportional gap: small for close times, larger for distant ones
+                  let gap = 4; // default min gap
                   if (rowIdx > 0) {
-                    const gap = timeToMin(startTime) - timeToMin(rows[rowIdx - 1]);
-                    // For gaps under 90 min, overlap proportionally
-                    if (gap < 90) {
-                      marginTop = -Math.round(Math.max(20, (90 - gap) * 1.2));
-                    }
+                    const delta = timeToMin(startTime) - timeToMin(rows[rowIdx - 1]);
+                    // 30 min → 8px, 60 min → 16px, 90 min → 24px, 120+ min → 28px
+                    gap = Math.min(28, Math.max(4, Math.round(delta / 60 * 16)));
                   }
 
                   return (
                     <div
                       key={startTime}
                       className="grid grid-cols-[repeat(7,1fr)] gap-1"
-                      style={{ marginTop, position: 'relative', zIndex: rowIdx + 1 }}
+                      style={{ marginTop: rowIdx === 0 ? 0 : gap }}
                     >
                       {days.map((day) => {
                         const dateKey = formatDateKey(day);
