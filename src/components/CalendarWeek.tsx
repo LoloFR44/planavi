@@ -109,8 +109,15 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
     };
   }, [days, slotsByDate, today]);
 
-  // Determine which days to show (filter old past days)
-  const visibleDays = useMemo(() => {
+  // Desktop: only show today and future days
+  const desktopDays = useMemo(() => {
+    return days
+      .map((day, i) => ({ day, key: formatDateKey(day), index: i }))
+      .filter(({ key }) => key >= today);
+  }, [days, today]);
+
+  // Mobile: show recent past days too
+  const mobileDays = useMemo(() => {
     return days.map((day, i) => {
       const key = formatDateKey(day);
       const isPast = key < today;
@@ -121,7 +128,7 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
         const diffDays = Math.round(diffMs / 86400000);
         if (diffDays > 2) return null;
       }
-      return { day, key, index: i, isPast, isToday: key === today };
+      return { day, key, index: i, isPast: key < today, isToday: key === today };
     }).filter(Boolean) as { day: Date; key: string; index: number; isPast: boolean; isToday: boolean }[];
   }, [days, today]);
 
@@ -165,34 +172,36 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
         <div>
           <h2 className="text-lg font-bold text-gray-900 capitalize">{monthYear}</h2>
           <p className="text-sm text-gray-400">
-            Semaine du {days[0].getDate()} au {days[6].getDate()} {MONTH_NAMES[days[6].getMonth()]}
+            {desktopDays.length < 7
+              ? `Du ${desktopDays[0]?.day.getDate() ?? days[0].getDate()} au ${days[6].getDate()} ${MONTH_NAMES[days[6].getMonth()]}`
+              : `Semaine du ${days[0].getDate()} au ${days[6].getDate()} ${MONTH_NAMES[days[6].getMonth()]}`}
           </p>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={goToToday}
-            className="px-3 py-1.5 text-xs font-semibold text-[#1e3a8a] bg-[#1e3a8a]/5 rounded-lg hover:bg-[#1e3a8a]/10"
+            className="px-3 py-1.5 text-xs font-semibold text-[#1e3a8a] bg-[#1e3a8a]/5 rounded-lg hover:bg-[#1e3a8a]/10 transition-colors"
           >
             Aujourd&apos;hui
           </button>
           <button
             onClick={() => navigateWeek(-1)}
             disabled={!canGoPrev}
-            className={`p-2 rounded-lg transition-colors ${canGoPrev ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-200 cursor-not-allowed'}`}
+            className={`p-2 rounded-full transition-all ${canGoPrev ? 'bg-gradient-to-br from-[#1e3a8a] to-[#3db54a] text-white shadow-md hover:shadow-lg hover:scale-105' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}
             aria-label="Semaine précédente"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <button
             onClick={() => navigateWeek(1)}
             disabled={!canGoNext}
-            className={`p-2 rounded-lg transition-colors ${canGoNext ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-200 cursor-not-allowed'}`}
+            className={`p-2 rounded-full transition-all ${canGoNext ? 'bg-gradient-to-br from-[#1e3a8a] to-[#3db54a] text-white shadow-md hover:shadow-lg hover:scale-105' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}
             aria-label="Semaine suivante"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
@@ -201,20 +210,18 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
       {/* Desktop: timeline layout (lg+) */}
       <div className="hidden lg:block">
         {/* Day headers */}
-        <div className="grid grid-cols-[repeat(7,1fr)] gap-1 mb-1">
-          {days.map((day, i) => {
-            const key = formatDateKey(day);
+        <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: `repeat(${desktopDays.length}, 1fr)` }}>
+          {desktopDays.map(({ day, key, index }) => {
             const isToday = key === today;
-            const isPast = key < today;
             return (
               <div key={key} className={`text-center rounded-lg px-1 py-1.5 ${
                 isToday ? 'bg-gradient-to-b from-[#1e3a8a]/10 to-[#1e3a8a]/5' : ''
               }`}>
                 <p className={`text-[10px] font-bold uppercase tracking-wider leading-tight ${
-                  isToday ? 'text-[#1e3a8a]' : isPast ? 'text-gray-300' : 'text-gray-400'
-                }`}>{DAY_NAMES[i]}</p>
+                  isToday ? 'text-[#1e3a8a]' : 'text-gray-400'
+                }`}>{DAY_NAMES[index]}</p>
                 <p className={`text-base font-bold leading-tight ${
-                  isToday ? 'text-[#1e3a8a]' : isPast ? 'text-gray-300' : 'text-gray-800'
+                  isToday ? 'text-[#1e3a8a]' : 'text-gray-800'
                 }`}>{day.getDate()}</p>
               </div>
             );
@@ -249,20 +256,16 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
                   return (
                     <div
                       key={startTime}
-                      className="grid grid-cols-[repeat(7,1fr)] gap-1"
-                      style={{ marginTop: rowIdx === 0 ? 0 : gap }}
+                      className="grid gap-1"
+                      style={{ gridTemplateColumns: `repeat(${desktopDays.length}, 1fr)`, marginTop: rowIdx === 0 ? 0 : gap }}
                     >
-                      {days.map((day) => {
-                        const dateKey = formatDateKey(day);
-                        const isPast = dateKey < today;
+                      {desktopDays.map(({ key: dateKey }) => {
                         const daySlots = (slotsByDate[dateKey] || [])
                           .filter((s) => filterFn(s) && s.startTime === startTime);
 
                         return (
                           <div key={dateKey} className="min-w-0">
-                            {isPast ? (
-                              <div className="h-4" />
-                            ) : daySlots.length > 0 ? (
+                            {daySlots.length > 0 ? (
                               daySlots.map((slot) => (
                                 <TimeSlotCard
                                   key={slot.id}
@@ -286,7 +289,7 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
 
       {/* Mobile: stacked cards (sm, md) */}
       <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-1">
-        {visibleDays.map(({ day, key, index, isPast, isToday }) => {
+        {mobileDays.map(({ day, key, index, isPast, isToday }) => {
           const daySlots = (slotsByDate[key] || []).sort((a, b) => a.startTime.localeCompare(b.startTime));
           return (
             <div
