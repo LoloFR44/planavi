@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import type { PlanningFormData } from '@/types';
 
 interface PlanningFormProps {
@@ -22,6 +23,7 @@ function generateCode(): string {
 }
 
 export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer le planning' }: PlanningFormProps) {
+  const { user } = useAuth();
   const [form, setForm] = useState<PlanningFormData>({
     slug: initial?.slug || generateCode(),
     title: initial?.title || '',
@@ -38,9 +40,9 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
     startDate: initial?.startDate || new Date().toISOString().split('T')[0],
     endDate: initial?.endDate || '',
     isActive: initial?.isActive ?? true,
-    adminPassword: initial?.adminPassword || '',
-    adminName: initial?.adminName || '',
-    adminEmail: initial?.adminEmail || '',
+    adminUid: initial?.adminUid || user?.uid || '',
+    adminName: initial?.adminName || (typeof window !== 'undefined' ? sessionStorage.getItem('admin_name') || '' : ''),
+    adminEmail: initial?.adminEmail || user?.email || '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -112,7 +114,7 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.residentName.trim() || !form.title.trim() || !form.slug.trim() || !form.adminPassword.trim() || !form.adminEmail?.trim() || !form.adminName?.trim()) {
+    if (!form.residentName.trim() || !form.title.trim() || !form.slug.trim() || !form.adminEmail?.trim() || !form.adminName?.trim()) {
       setError('Merci de remplir tous les champs marqués d\'une étoile *.');
       return;
     }
@@ -221,14 +223,9 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
             <p className="text-xs text-gray-400 mt-1">Sera affiché sur la page comme &quot;Organisé par...&quot;</p>
           </div>
           <div>
-            <label className={labelClass}>Votre email *</label>
-            <input type="email" value={form.adminEmail} onChange={(e) => updateField('adminEmail', e.target.value)} className={inputClass} placeholder="ex : loic@gmail.com" required />
-            <p className="text-xs text-gray-400 mt-1">Pour vous reconnecter et recevoir les notifications</p>
-          </div>
-          <div>
-            <label className={labelClass}>Choisissez un mot de passe *</label>
-            <input type="text" value={form.adminPassword} onChange={(e) => updateField('adminPassword', e.target.value)} className={inputClass} placeholder="ex : mamandupont2026" required />
-            <p className="text-xs text-gray-400 mt-1">Choisissez quelque chose de facile à retenir</p>
+            <label className={labelClass}>Votre email</label>
+            <input type="email" value={form.adminEmail} readOnly className={`${inputClass} bg-gray-50 text-gray-500`} />
+            <p className="text-xs text-gray-400 mt-1">Lié à votre compte (non modifiable)</p>
           </div>
         </div>
       </fieldset>

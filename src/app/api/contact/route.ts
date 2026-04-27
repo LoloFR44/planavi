@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { escapeHtml } from '@/utils/sanitize';
+import { checkRateLimit, getClientIp } from '@/utils/rateLimit';
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
@@ -13,6 +15,11 @@ interface ContactPayload {
 }
 
 function buildContactHtml(data: ContactPayload): string {
+  const safeName = escapeHtml(data.name);
+  const safeEmail = escapeHtml(data.email);
+  const safeSubject = escapeHtml(data.subject);
+  const safeMessage = escapeHtml(data.message);
+
   return `
 <!DOCTYPE html>
 <html lang="fr">
@@ -31,23 +38,23 @@ function buildContactHtml(data: ContactPayload): string {
       <table style="width:100%;border-collapse:collapse;background:#f9fafb;border-radius:10px;overflow:hidden;">
         <tr>
           <td style="padding:10px 14px;color:#6b7280;font-size:14px;width:100px;">Nom</td>
-          <td style="padding:10px 14px;font-size:14px;font-weight:600;">${data.name}</td>
+          <td style="padding:10px 14px;font-size:14px;font-weight:600;">${safeName}</td>
         </tr>
         <tr>
           <td style="padding:10px 14px;color:#6b7280;font-size:14px;">Email</td>
           <td style="padding:10px 14px;font-size:14px;">
-            <a href="mailto:${data.email}" style="color:#1e3a8a;">${data.email}</a>
+            <a href="mailto:${safeEmail}" style="color:#1e3a8a;">${safeEmail}</a>
           </td>
         </tr>
         <tr>
           <td style="padding:10px 14px;color:#6b7280;font-size:14px;">Objet</td>
-          <td style="padding:10px 14px;font-size:14px;">${data.subject}</td>
+          <td style="padding:10px 14px;font-size:14px;">${safeSubject}</td>
         </tr>
       </table>
 
       <div style="margin-top:20px;padding:16px;background:#f9fafb;border-radius:10px;">
         <p style="margin:0 0 6px;font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;">Message</p>
-        <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${data.message}</p>
+        <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${safeMessage}</p>
       </div>
     </div>
 
@@ -63,6 +70,16 @@ function buildContactHtml(data: ContactPayload): string {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: max 5 contact messages per IP per 15 minutes
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(ip, 'contact', { maxRequests: 5, windowSeconds: 900 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Trop de requêtes. Réessayez plus tard.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+    );
+  }
+
   try {
     const body: ContactPayload = await request.json();
 

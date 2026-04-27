@@ -15,7 +15,8 @@ export interface Planning {
   startDate: string; // YYYY-MM-DD
   endDate?: string;
   isActive: boolean;
-  adminPassword: string;
+  adminPassword?: string; // DEPRECATED — kept for migration, use Firebase Auth
+  adminUid?: string; // Firebase Auth UID of the planning owner
   adminName?: string;
   adminEmail?: string;
   adminToken?: string;

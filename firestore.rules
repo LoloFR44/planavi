@@ -5,45 +5,62 @@ service cloud.firestore {
 
     // ── Plannings ──────────────────────────────────────
     // Read: anyone (public pages need this)
-    // Write: anyone (admin uses client-side password, no Firebase Auth)
-    // Validate: required fields must exist on create
+    // Create: authenticated users only (must set adminUid to their own UID)
+    // Update/Delete: only the planning owner (adminUid must match)
     match /plannings/{planningId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['personName', 'slug', 'createdAt']);
-      allow update: if true;
-      allow delete: if true;
+
+      allow create: if request.auth != null
+        && request.resource.data.adminUid == request.auth.uid
+        && request.resource.data.keys().hasAll(['residentName', 'slug', 'adminUid']);
+
+      allow update: if request.auth != null
+        && resource.data.adminUid == request.auth.uid;
+
+      allow delete: if request.auth != null
+        && resource.data.adminUid == request.auth.uid;
     }
 
     // ── Time Slots ─────────────────────────────────────
     // Read: anyone (public calendar)
-    // Write: anyone (admin manages slots without Firebase Auth)
-    // Validate: required fields
+    // Write: authenticated users only
     match /timeSlots/{slotId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['planningId', 'date', 'startTime', 'endTime']);
-      allow update: if true;
-      allow delete: if true;
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['planningId', 'date', 'startTime', 'endTime']);
+
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
     }
 
     // ── Bookings ───────────────────────────────────────
     // Read: anyone (public page shows visitor names)
     // Create: anyone (visitors book without account)
-    // Delete: anyone (cancel flow, verified by last name client-side)
-    // Validate: required fields on create
+    // Delete: authenticated only (admin cancels bookings)
+    // Update: blocked
     match /bookings/{bookingId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['planningId', 'timeSlotId', 'visitorFirstName', 'visitorLastName', 'visitorCount']);
-      allow delete: if true;
+
+      allow create: if request.resource.data.keys()
+        .hasAll(['planningId', 'timeSlotId', 'visitorFirstName', 'visitorLastName', 'visitorCount']);
+
+      allow delete: if request.auth != null;
       allow update: if false;
     }
 
     // ── Messages ───────────────────────────────────────
-    // Create: anyone (contact form)
-    // Read/update/delete: blocked (admin reads via console or future auth)
+    // Create: anyone (visitors can leave messages)
+    // Read: anyone
+    // Delete: authenticated only (admin moderation)
+    // Update: blocked
     match /messages/{messageId} {
-      allow create: if request.resource.data.keys().hasAll(['planningId', 'content', 'createdAt']);
       allow read: if true;
-      allow delete: if true;
+
+      allow create: if request.resource.data.keys()
+        .hasAll(['planningId', 'content', 'createdAt']);
+
+      allow delete: if request.auth != null;
       allow update: if false;
     }
 

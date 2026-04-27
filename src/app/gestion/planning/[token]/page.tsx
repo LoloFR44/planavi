@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { getPlanningByToken, updatePlanning } from '@/services/plannings';
 import { useTimeSlots } from '@/hooks/useTimeSlots';
 import { useBookings } from '@/hooks/useBookings';
@@ -25,6 +26,7 @@ export default function SharedManagePlanningPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = use(params);
+  const { user, loading: authLoading } = useAuth();
   const [planning, setPlanning] = useState<Planning | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -109,12 +111,41 @@ export default function SharedManagePlanningPage({
     setToast({ type: 'success', message: 'Lien copié !' });
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <>
         <Header />
         <main className="flex-1 bg-gray-50 flex items-center justify-center">
           <LoadingSpinner />
+        </main>
+      </>
+    );
+  }
+
+  // Require authentication for management access
+  if (!user) {
+    return (
+      <>
+        <Header />
+        <main className="flex-1 bg-gray-50">
+          <div className="max-w-xl mx-auto px-4 py-16 text-center">
+            <div className="w-14 h-14 mx-auto mb-4 bg-[#1e3a8a]/10 rounded-full flex items-center justify-center">
+              <svg className="w-7 h-7 text-[#1e3a8a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Connexion requise</h1>
+            <p className="text-gray-500 mb-6">
+              Pour accéder à la gestion de ce planning, vous devez être connecté.
+            </p>
+            <Link
+              href="/gestion"
+              className="inline-block px-6 py-2.5 text-sm font-semibold text-white rounded-xl hover:shadow-md transition-all"
+              style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
+            >
+              Se connecter
+            </Link>
+          </div>
         </main>
       </>
     );

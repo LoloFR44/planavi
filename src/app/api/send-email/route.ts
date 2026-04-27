@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { escapeHtml } from '@/utils/sanitize';
+import { checkRateLimit, getClientIp } from '@/utils/rateLimit';
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
@@ -32,12 +34,20 @@ function formatDate(dateStr: string): string {
 }
 
 function buildEmailHtml(data: EmailPayload): string {
-  const relationLine = data.visitorRelation
-    ? `<tr><td style="padding:6px 12px;color:#6b7280;font-size:14px;">Lien</td><td style="padding:6px 12px;font-size:14px;">${data.visitorRelation}</td></tr>`
+  // Sanitize all user-provided fields to prevent XSS
+  const safeFirstName = escapeHtml(data.visitorFirstName);
+  const safeLastName = escapeHtml(data.visitorLastName);
+  const safeResidentName = escapeHtml(data.residentName);
+  const safePlanningTitle = escapeHtml(data.planningTitle);
+  const safeRelation = data.visitorRelation ? escapeHtml(data.visitorRelation) : '';
+  const safeComment = data.comment ? escapeHtml(data.comment) : '';
+
+  const relationLine = safeRelation
+    ? `<tr><td style="padding:6px 12px;color:#6b7280;font-size:14px;">Lien</td><td style="padding:6px 12px;font-size:14px;">${safeRelation}</td></tr>`
     : '';
 
-  const commentLine = data.comment
-    ? `<tr><td style="padding:6px 12px;color:#6b7280;font-size:14px;">Commentaire</td><td style="padding:6px 12px;font-size:14px;font-style:italic;">${data.comment}</td></tr>`
+  const commentLine = safeComment
+    ? `<tr><td style="padding:6px 12px;color:#6b7280;font-size:14px;">Commentaire</td><td style="padding:6px 12px;font-size:14px;font-style:italic;">${safeComment}</td></tr>`
     : '';
 
   const visitorsLine = data.visitorCount > 1
@@ -60,13 +70,13 @@ function buildEmailHtml(data: EmailPayload): string {
     <!-- Body -->
     <div style="padding:28px 24px;">
       <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.5;">
-        Une nouvelle visite a été réservée pour <strong>${data.residentName}</strong>.
+        Une nouvelle visite a été réservée pour <strong>${safeResidentName}</strong>.
       </p>
 
       <table style="width:100%;border-collapse:collapse;background:#f9fafb;border-radius:10px;overflow:hidden;">
         <tr>
           <td style="padding:6px 12px;color:#6b7280;font-size:14px;">Visiteur</td>
-          <td style="padding:6px 12px;font-size:14px;font-weight:600;">${data.visitorFirstName} ${data.visitorLastName}</td>
+          <td style="padding:6px 12px;font-size:14px;font-weight:600;">${safeFirstName} ${safeLastName}</td>
         </tr>
         ${relationLine}
         <tr>
@@ -101,6 +111,16 @@ function buildEmailHtml(data: EmailPayload): string {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: max 10 emails per IP per 15 minutes
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(ip, 'send-email', { maxRequests: 10, windowSeconds: 900 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Trop de requêtes. Réessayez plus tard.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+    );
+  }
+
   try {
     const body: EmailPayload = await request.json();
 
@@ -111,7 +131,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await getResend().emails.send({
       from: 'Planavi <onboarding@resend.dev>',
       to: body.to,
-      subject: `Nouvelle visite : ${body.visitorFirstName} ${body.visitorLastName} — ${formatDate(body.date)}`,
+      subject: `Nouvelle visite : ${escapeHtml(body.visitorFirstName)} ${escapeHtml(body.visitorLastName)} — ${formatDate(body.date)}`,
       html: buildEmailHtml(body),
     });
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { escapeHtml } from '@/utils/sanitize';
+import { checkRateLimit, getClientIp } from '@/utils/rateLimit';
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
@@ -31,12 +33,19 @@ function formatDate(dateStr: string): string {
 }
 
 function buildConfirmationHtml(data: ConfirmationPayload): string {
-  const locationLine = data.locationName
-    ? `<tr><td style="padding:6px 12px;color:#6b7280;font-size:14px;">Lieu</td><td style="padding:6px 12px;font-size:14px;">${data.locationName}</td></tr>`
+  // Sanitize all user-provided fields
+  const safeFirstName = escapeHtml(data.visitorFirstName);
+  const safeLastName = escapeHtml(data.visitorLastName);
+  const safeResidentName = escapeHtml(data.residentName);
+  const safeLocation = data.locationName ? escapeHtml(data.locationName) : '';
+  const safeAddress = data.address ? escapeHtml(data.address) : '';
+
+  const locationLine = safeLocation
+    ? `<tr><td style="padding:6px 12px;color:#6b7280;font-size:14px;">Lieu</td><td style="padding:6px 12px;font-size:14px;">${safeLocation}</td></tr>`
     : '';
 
-  const addressLine = data.address
-    ? `<tr><td style="padding:6px 12px;color:#6b7280;font-size:14px;">Adresse</td><td style="padding:6px 12px;font-size:14px;">${data.address}</td></tr>`
+  const addressLine = safeAddress
+    ? `<tr><td style="padding:6px 12px;color:#6b7280;font-size:14px;">Adresse</td><td style="padding:6px 12px;font-size:14px;">${safeAddress}</td></tr>`
     : '';
 
   const visitorsLine = data.visitorCount > 1
@@ -61,7 +70,7 @@ function buildConfirmationHtml(data: ConfirmationPayload): string {
     <!-- Body -->
     <div style="padding:28px 24px;">
       <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.5;">
-        Bonjour <strong>${data.visitorFirstName}</strong>, votre visite aupr\u00e8s de <strong>${data.residentName}</strong> est bien enregistr\u00e9e.
+        Bonjour <strong>${safeFirstName}</strong>, votre visite aupr\u00e8s de <strong>${safeResidentName}</strong> est bien enregistr\u00e9e.
       </p>
 
       <table style="width:100%;border-collapse:collapse;background:#f9fafb;border-radius:10px;overflow:hidden;">
@@ -102,6 +111,16 @@ function buildConfirmationHtml(data: ConfirmationPayload): string {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: max 10 confirmation emails per IP per 15 minutes
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(ip, 'send-confirmation', { maxRequests: 10, windowSeconds: 900 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Trop de requ\u00eates. R\u00e9essayez plus tard.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+    );
+  }
+
   try {
     const body: ConfirmationPayload = await request.json();
 

@@ -19,10 +19,18 @@ import type { Planning, PlanningFormData } from '@/types';
 const COLLECTION = 'plannings';
 
 function generateAdminToken(): string {
+  // Use crypto.getRandomValues for cryptographically secure token generation
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const array = new Uint8Array(32);
+  if (typeof globalThis.crypto !== 'undefined') {
+    globalThis.crypto.getRandomValues(array);
+  } else {
+    // Fallback for environments without crypto (should not happen in modern browsers)
+    for (let i = 0; i < 32; i++) array[i] = Math.floor(Math.random() * 256);
+  }
   let token = '';
-  for (let i = 0; i < 24; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < 32; i++) {
+    token += chars.charAt(array[i] % chars.length);
   }
   return token;
 }
@@ -120,6 +128,15 @@ export async function updatePlanning(id: string, data: Partial<PlanningFormData>
 
 export async function deletePlanning(id: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTION, id));
+}
+
+/**
+ * Migration: link an existing planning to a Firebase Auth UID.
+ * Called when a user logs in via Firebase Auth for the first time and
+ * their plannings don't yet have an adminUid set.
+ */
+export async function migratePlanningToAuth(planningId: string, uid: string): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, planningId), { adminUid: uid });
 }
 
 export function subscribeToPlannings(callback: (plannings: Planning[]) => void): Unsubscribe {

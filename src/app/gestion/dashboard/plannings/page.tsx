@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePlanningsByEmail } from '@/hooks/usePlanning';
 import { deletePlanning } from '@/services/plannings';
 import { deleteTimeSlotsForPlanning } from '@/services/timeSlots';
@@ -13,19 +12,8 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import EmptyState from '@/components/ui/EmptyState';
 
 export default function PlanningsListPage() {
-  const [email, setEmail] = useState<string | null>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    const storedEmail = sessionStorage.getItem('admin_email');
-    if (!storedEmail) {
-      router.push('/gestion');
-      return;
-    }
-    setEmail(storedEmail);
-  }, [router]);
-
-  const { plannings, loading } = usePlanningsByEmail(email);
+  const { user } = useAuth();
+  const { plannings, loading } = usePlanningsByEmail(user?.email || null);
 
   const handleDeletePlanning = async (id: string) => {
     try {
@@ -40,33 +28,20 @@ export default function PlanningsListPage() {
     await deletePlanning(id);
   };
 
-  if (!email) return <LoadingSpinner />;
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Mes plannings</h1>
-          <p className="text-sm text-gray-400">Connecté avec {email}</p>
+          <p className="text-sm text-gray-400">Connecté avec {user?.email}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/gestion/dashboard/plannings/new"
-            className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
-            style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
-          >
-            + Nouveau planning
-          </Link>
-          <button
-            onClick={() => {
-              sessionStorage.clear();
-              router.push('/gestion');
-            }}
-            className="px-4 py-2 text-sm text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Déconnexion
-          </button>
-        </div>
+        <Link
+          href="/gestion/dashboard/plannings/new"
+          className="px-4 py-2 text-white text-sm font-medium rounded-lg hover:shadow-md transition-all"
+          style={{ background: 'linear-gradient(135deg, #1e3a8a, #3db54a)' }}
+        >
+          + Nouveau planning
+        </Link>
       </div>
 
       {loading ? (
