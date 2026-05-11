@@ -31,7 +31,10 @@ function getWeekDays(start: Date): Date[] {
 }
 
 function formatDateKey(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function timeToMin(t: string): number {
@@ -51,12 +54,7 @@ export default function CalendarWeek({ timeSlots, bookings, planning }: Calendar
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const days = useMemo(() => getWeekDays(weekStart), [weekStart]);
-  // Use midnight local time so `today` key is consistent with calendar day keys
-  // (formatDateKey uses toISOString which shifts to UTC — both must start from midnight local)
-  const today = useMemo(() => {
-    const now = new Date();
-    return formatDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
-  }, []);
+  const today = useMemo(() => formatDateKey(new Date()), []);
 
   // Index slots by date
   const slotsByDate = useMemo(() => {

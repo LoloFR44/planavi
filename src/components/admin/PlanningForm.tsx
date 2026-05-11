@@ -37,7 +37,7 @@ export default function PlanningForm({ initial, onSubmit, submitLabel = 'Créer 
     privateNotes: initial?.privateNotes || '',
     adminMessage: initial?.adminMessage || '',
     defaultVisitDuration: initial?.defaultVisitDuration || 60,
-    startDate: initial?.startDate || new Date().toISOString().split('T')[0],
+    startDate: initial?.startDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
     endDate: initial?.endDate || '',
     isActive: initial?.isActive ?? true,
     adminUid: initial?.adminUid || user?.uid || '',
